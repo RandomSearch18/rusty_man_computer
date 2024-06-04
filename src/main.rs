@@ -7,7 +7,7 @@ fn print_ram(ram: [i16; 100]) {
     for (i, &cell) in ram.iter().enumerate() {
         if cell == 0 {
             // Print in grey
-            print!("{}", color_grey("000 "));
+            print!("{} ", color_grey("000"));
         } else {
             print!("{:#03} ", cell);
         }
