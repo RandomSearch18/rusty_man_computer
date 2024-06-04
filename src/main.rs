@@ -1,3 +1,5 @@
+use std::{env, error::Error};
+
 type RAM = [i16; 100];
 
 struct Registers {
@@ -121,7 +123,7 @@ fn clock_cycle(ram: &mut RAM, registers: &mut Registers) -> bool {
     execute_instruction(ram, registers)
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     println!("Little Man Computer implemented in Rust!");
     // Array of 100 i16 ints
     let mut ram: RAM = [0; 100];
@@ -133,6 +135,14 @@ fn main() {
         accumulator: 0,
     };
 
+    // If a memory dump (.bin file) has been provided, load it into RAM
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        let filename = &args[1];
+        let contents = std::fs::read(filename)?;
+        dbg!(&contents);
+    }
+
     let mut should_continue = true;
     while should_continue {
         println!();
@@ -140,4 +150,6 @@ fn main() {
         print_ram(&ram);
         should_continue = clock_cycle(&mut ram, &mut registers);
     }
+
+    Ok(())
 }
