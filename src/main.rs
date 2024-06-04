@@ -105,7 +105,7 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers) -> bool {
     true
 }
 
-fn clock_cycle(ram: &mut RAM, registers: &mut Registers) {
+fn clock_cycle(ram: &mut RAM, registers: &mut Registers) -> bool {
     // Stage 1: Fetch
     let ram_index = registers.program_counter;
     registers.program_counter += 1;
@@ -118,7 +118,7 @@ fn clock_cycle(ram: &mut RAM, registers: &mut Registers) {
     registers.address_register = instruction_address as usize;
 
     // Stage 3: Execute
-    execute_instruction(ram, registers);
+    execute_instruction(ram, registers)
 }
 
 fn main() {
@@ -133,8 +133,11 @@ fn main() {
         accumulator: 0,
     };
 
-    println!();
-    print_registers(&registers);
-    print_ram(&ram);
-    clock_cycle(&mut ram, &mut registers)
+    let mut should_continue = true;
+    while should_continue {
+        println!();
+        print_registers(&registers);
+        print_ram(&ram);
+        should_continue = clock_cycle(&mut ram, &mut registers);
+    }
 }
