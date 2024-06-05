@@ -1,4 +1,4 @@
-use std::{env, error::Error};
+use std::{env, error::Error, fs};
 
 type RAM = [i16; 100];
 
@@ -123,6 +123,23 @@ fn clock_cycle(ram: &mut RAM, registers: &mut Registers) -> bool {
     execute_instruction(ram, registers)
 }
 
+fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
+    let mut touched_addresses = 0;
+    for (i, &byte) in data_bytes.iter().enumerate() {
+        if i >= ram.len() * 2 {
+            break;
+        }
+        let target_address = i / 2;
+        if i % 2 == 0 {
+            ram[target_address] = (byte as i16) << 8;
+            touched_addresses += 1;
+        } else {
+            ram[target_address] += byte as i16;
+        }
+    }
+    println!("Loaded data into {} RAM addresses", touched_addresses);
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Little Man Computer implemented in Rust!");
     // Array of 100 i16 ints
@@ -139,8 +156,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
         let filename = &args[1];
-        let contents = std::fs::read(filename)?;
-        dbg!(&contents);
+        let data = fs::read(filename)?;
+        load_data_to_ram(&mut ram, data);
     }
 
     let mut should_continue = true;
