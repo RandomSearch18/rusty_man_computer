@@ -73,11 +73,13 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers) -> bool {
         6 => {
             // BRA - Branch - use the address given as the address of the next instruction
             registers.program_counter = registers.address_register;
+            println!("BRA: Jumping to address {}", registers.program_counter)
         }
         7 => {
             // BRZ - Branch to the address given if the Accumulator is zero
             if registers.accumulator == 0 {
                 registers.program_counter = registers.address_register;
+                println!("BRZ: Jumping to address {}", registers.program_counter)
             }
         }
         8 => {
