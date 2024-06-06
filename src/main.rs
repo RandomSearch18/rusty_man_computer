@@ -43,6 +43,17 @@ fn print_registers(registers: &Registers) {
     );
 }
 
+fn check_overflow(registers: &mut Registers) {
+    let positive_overflow = registers.accumulator - 999;
+    if positive_overflow > 0 {
+        registers.accumulator = -1000 + positive_overflow;
+    }
+    let negative_overflow = registers.accumulator + 999;
+    if negative_overflow < 0 {
+        registers.accumulator = 1000 + negative_overflow;
+    }
+}
+
 fn execute_instruction(ram: &mut RAM, registers: &mut Registers) -> bool {
     match registers.instruction_register {
         0 => {
@@ -53,10 +64,12 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers) -> bool {
         1 => {
             // ADD - Add the contents of the memory address to the Accumulator
             registers.accumulator += ram[registers.address_register];
+            check_overflow(registers);
         }
         2 => {
             // SUB - Subtract the contents of the memory address from the Accumulator
             registers.accumulator -= ram[registers.address_register];
+            check_overflow(registers);
         }
         3 => {
             // STA or STO - Store the value in the Accumulator in the memory address given
