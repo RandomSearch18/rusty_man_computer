@@ -43,6 +43,19 @@ fn print_registers(registers: &Registers) {
     );
 }
 
+fn print_output(output: &String) {
+    // Split into "rows" of 3 characters
+    let output_vec = output.chars().collect::<Vec<char>>();
+    let rows = output_vec.chunks(4);
+    // Add pipe characters to separate the rows
+    let formatted_output = rows
+        .map(|row| bold(&row.iter().collect::<String>()))
+        .collect::<Vec<String>>()
+        .join(&color_grey("|"));
+
+    println!("{}", formatted_output);
+}
+
 fn check_overflow(integer: &mut i16) {
     let positive_overflow = *integer - 999;
     if positive_overflow > 0 {
@@ -108,11 +121,10 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
-                output.push_str(format!(" {}", registers.accumulator).as_str());
+                output.push_str(format!("{}", registers.accumulator).as_str());
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
-                output.push(' ');
                 output.push(registers.accumulator as u8 as char);
             }
         }
@@ -181,7 +193,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     while should_continue {
         println!();
         print_registers(&registers);
-        println!("Output: {}", bold(&output));
+        print_output(&output);
         print_ram(&ram);
         should_continue = clock_cycle(&mut ram, &mut registers, &mut output);
     }
