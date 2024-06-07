@@ -54,7 +54,7 @@ fn check_overflow(integer: &mut i16) {
     }
 }
 
-fn execute_instruction(ram: &mut RAM, registers: &mut Registers) -> bool {
+fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut String) -> bool {
     match registers.instruction_register {
         0 => {
             // HLT - Stop (Little Man has a rest)
@@ -108,11 +108,12 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers) -> bool {
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
-                // TODO
+                output.push_str(format!(" {}", registers.accumulator).as_str());
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
-                print!("{}", registers.accumulator as u8 as char);
+                output.push(' ');
+                output.push(registers.accumulator as u8 as char);
             }
         }
         _ => {
@@ -122,7 +123,7 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers) -> bool {
     true
 }
 
-fn clock_cycle(ram: &mut RAM, registers: &mut Registers) -> bool {
+fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut String) -> bool {
     // Stage 1: Fetch
     let ram_index = registers.program_counter;
     registers.program_counter += 1;
@@ -135,7 +136,7 @@ fn clock_cycle(ram: &mut RAM, registers: &mut Registers) -> bool {
     registers.address_register = instruction_address as usize;
 
     // Stage 3: Execute
-    execute_instruction(ram, registers)
+    execute_instruction(ram, registers, output)
 }
 
 fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
@@ -166,6 +167,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         address_register: 0,
         accumulator: 0,
     };
+    let mut output = String::new();
 
     // If a memory dump (.bin file) has been provided, load it into RAM
     let args: Vec<String> = env::args().collect();
@@ -179,8 +181,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     while should_continue {
         println!();
         print_registers(&registers);
+        println!("Output: {}", bold(&output));
         print_ram(&ram);
-        should_continue = clock_cycle(&mut ram, &mut registers);
+        should_continue = clock_cycle(&mut ram, &mut registers, &mut output);
     }
 
     Ok(())
