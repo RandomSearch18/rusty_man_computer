@@ -9,7 +9,8 @@ struct Registers {
     accumulator: i16,
 }
 
-fn color_grey(text: &str) -> String {
+/// Wrap the provided test in a grey/gray color code
+fn color_gray(text: &str) -> String {
     format!("\x1b[90m{}\x1b[0m", text)
 }
 
@@ -21,8 +22,8 @@ fn print_ram(ram: &RAM) {
     let columns = 10;
     for (i, &cell) in ram.iter().enumerate() {
         if cell == 0 {
-            // Print in grey
-            print!("{} ", color_grey("000"));
+            // Print in gray
+            print!("{} ", color_gray("000"));
         } else {
             print!("{:#03} ", cell);
         }
@@ -51,7 +52,7 @@ fn print_output(output: &String) {
     let formatted_output = rows
         .map(|row| bold(&row.iter().collect::<String>()))
         .collect::<Vec<String>>()
-        .join(&color_grey("|"));
+        .join(&color_gray("|"));
 
     println!("{}", formatted_output);
 }
