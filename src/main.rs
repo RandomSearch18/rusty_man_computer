@@ -57,7 +57,7 @@ fn print_output(output: &String) {
     println!("{}", formatted_output);
 }
 
-fn check_overflow(integer: &mut i16) {
+fn apply_overflow(integer: &mut i16) {
     let positive_overflow = *integer - 999;
     if positive_overflow > 0 {
         *integer = -1000 + positive_overflow;
@@ -78,12 +78,12 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
         1 => {
             // ADD - Add the contents of the memory address to the Accumulator
             registers.accumulator += ram[registers.address_register];
-            check_overflow(&mut registers.accumulator);
+            apply_overflow(&mut registers.accumulator);
         }
         2 => {
             // SUB - Subtract the contents of the memory address from the Accumulator
             registers.accumulator -= ram[registers.address_register];
-            check_overflow(&mut registers.accumulator);
+            apply_overflow(&mut registers.accumulator);
         }
         3 => {
             // STA or STO - Store the value in the Accumulator in the memory address given
