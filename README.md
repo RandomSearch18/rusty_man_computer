@@ -21,13 +21,33 @@ Each clock cycle, the contents of the registers are shown on the first line, the
 
 ### Running the demo programs
 
-#### All ASCII characters
+The demo programs are taken from the online LMC simulator, so credit for them goes to Peter L Higginson.
+
+#### Addition
+
+> Output the sum of two numbers
+
+```bash
+cargo run --bin rusty_man_computer demos/add.bin
+```
+
+#### Addition and subtraction
+
+> Input three numbers.
+> Output the sum of the first two
+> and the third minus the first
+
+```bash
+cargo run --bin rusty_man_computer demos/add-subtract.bin
+```
+
+#### Basic ASCII characters
 
 ```bash
 cargo run --bin rusty_man_computer demos/ascii.bin
 ```
 
-#### A table of all ASCII characters
+#### Basic ASCII character table
 
 ```bash
 cargo run --bin rusty_man_computer demos/ascii_table.bin
