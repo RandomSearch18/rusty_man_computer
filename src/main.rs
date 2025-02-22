@@ -57,6 +57,35 @@ fn print_output(output: &String) {
     println!("{}", formatted_output);
 }
 
+enum ReadInputError {
+    Unrecoverable(std::io::Error),
+    Validation,
+}
+
+fn read_input() -> Result<i16, ReadInputError> {
+    let mut input = String::new();
+    match std::io::stdin().read_line(&mut input) {
+        Ok(_) => match input.trim().parse() {
+            Ok(num) => {
+                if num >= -999 && num <= 999 {
+                    return Ok(num);
+                } else {
+                    println!("Inputs must be between -999 and 999");
+                    return Err(ReadInputError::Validation);
+                }
+            }
+            Err(_) => {
+                println!("Please input a valid integer");
+                return Err(ReadInputError::Validation);
+            }
+        },
+        Err(error) => {
+            println!("Error: Failed to read input");
+            return Err(ReadInputError::Unrecoverable(error));
+        }
+    }
+}
+
 fn apply_overflow(integer: &mut i16) {
     let positive_overflow = *integer - 999;
     if positive_overflow > 0 {
@@ -118,7 +147,8 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
         9 => {
             if registers.address_register == 1 {
                 // INP - Take from Input
-                // TODO
+                let input_provided = read_input().unwrap_or_else(|_| 0);
+                registers.accumulator = input_provided;
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
