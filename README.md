@@ -21,13 +21,33 @@ Each clock cycle, the contents of the registers are shown on the first line, the
 
 ### Running the demo programs
 
-#### All ASCII characters
+The demo programs are taken from the online LMC simulator, so credit for them goes to Peter L Higginson.
+
+#### Addition
+
+> Output the sum of two numbers
+
+```bash
+cargo run --bin rusty_man_computer demos/add.bin
+```
+
+#### Addition and subtraction
+
+> Input three numbers.
+> Output the sum of the first two
+> and the third minus the first
+
+```bash
+cargo run --bin rusty_man_computer demos/add-subtract.bin
+```
+
+#### Basic ASCII characters
 
 ```bash
 cargo run --bin rusty_man_computer demos/ascii.bin
 ```
 
-#### A table of all ASCII characters
+#### Basic ASCII character table
 
 ```bash
 cargo run --bin rusty_man_computer demos/ascii_table.bin
@@ -55,4 +75,4 @@ cargo run --bin rusty_man_computer my_program.bin
 
 Rusty-Man Computer shows the whole state of the computer at the end of every clock cycle, including the contents of the registers, all memory values, the output, and if a branch instruction has been called. This verbose output should make it easy to see what the emulator is doing, and to track your code as it runs.
 
-The emulator implements all LMC instructions (as of LMC v1.5), apart from the Input instruction. Until the Input instruction is implemented, it acts as a NOOP, so the behaviour for programs that use it is undefined.
+The emulator implements all LMC v1.5 instructions, so programs should run exactly as they do on the online simulator.
