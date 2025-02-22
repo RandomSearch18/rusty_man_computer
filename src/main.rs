@@ -52,7 +52,7 @@ fn print_registers(registers: &Registers) {
     println!(
         "PC: {}, Instruction: {}, Addr: {}, Acc: {}",
         bold(&format!("{:02}", registers.program_counter)),
-        bold(&format!("{:03}", registers.instruction_register)),
+        bold(&format!("{:01}", registers.instruction_register)),
         bold(&format!("{:02}", registers.address_register)),
         bold(&format!("{:03}", registers.accumulator))
     );
