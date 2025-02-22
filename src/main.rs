@@ -1,4 +1,4 @@
-use std::{env, error::Error, fs};
+use std::{env, error::Error, fs, io::Write};
 
 type RAM = [i16; 100];
 
@@ -9,13 +9,27 @@ struct Registers {
     accumulator: i16,
 }
 
+const BOLD: &str = "\x1b[1m";
+const GRAY: &str = "\x1b[90m";
+const RED: &str = "\x1b[31m";
+const FORMAT_END: &str = "\x1b[0m";
+
 /// Wrap the provided test in a grey/gray color code
 fn color_gray(text: &str) -> String {
-    format!("\x1b[90m{}\x1b[0m", text)
+    [GRAY, text, FORMAT_END].concat()
+}
+
+/// Wrap the provided test in a grey/gray color code. Used for errors
+fn color_red(text: &str) -> String {
+    [RED, text, FORMAT_END].concat()
 }
 
 fn bold(text: &str) -> String {
-    format!("\x1b[1m{}\x1b[0m", text)
+    [BOLD, text, FORMAT_END].concat()
+}
+
+fn print_error(error: &str) {
+    println!("{}", color_red(error));
 }
 
 fn print_ram(ram: &RAM) {
@@ -70,18 +84,31 @@ fn read_input() -> Result<i16, ReadInputError> {
                 if num >= -999 && num <= 999 {
                     return Ok(num);
                 } else {
-                    println!("Inputs must be between -999 and 999");
+                    print_error("Please input an integer between -999 and 999");
                     return Err(ReadInputError::Validation);
                 }
             }
             Err(_) => {
-                println!("Please input a valid integer");
+                print_error("Please input a valid integer between -999 and 999");
                 return Err(ReadInputError::Validation);
             }
         },
         Err(error) => {
-            println!("Error: Failed to read input");
+            print_error("Error: Failed to read input");
             return Err(ReadInputError::Unrecoverable(error));
+        }
+    }
+}
+
+fn read_input_until_valid(prompt: &str) -> Result<i16, ()> {
+    loop {
+        print!("{}", prompt);
+        std::io::stdout().flush().unwrap_or(());
+        print!("{}", FORMAT_END);
+        match read_input() {
+            Ok(num) => return Ok(num),
+            Err(ReadInputError::Unrecoverable(_)) => return Err(()),
+            Err(ReadInputError::Validation) => continue,
         }
     }
 }
@@ -147,7 +174,8 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
         9 => {
             if registers.address_register == 1 {
                 // INP - Take from Input
-                let input_provided = read_input().unwrap_or_else(|_| 0);
+                let prompt = format!("INP: Number input: {}", BOLD);
+                let input_provided = read_input_until_valid(&prompt).unwrap_or_else(|_| 0);
                 registers.accumulator = input_provided;
             }
             if registers.address_register == 2 {
