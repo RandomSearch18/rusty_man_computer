@@ -1,6 +1,6 @@
 # Rusty-Man Computer
 
-This project is an emulator for Little Man Computer ([Official help page](https://peterhigginson.co.uk/lmc/help_new.html), [Wikipedia](https://en.wikipedia.org/wiki/Little_man_computer)), written in Rust.
+This project is an emulator for Little Man Computer ([official help page](https://peterhigginson.co.uk/lmc/help_new.html), [Wikipedia](https://en.wikipedia.org/wiki/Little_man_computer)), written in Rust.
 
 It contains two tools:
 
