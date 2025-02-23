@@ -1,8 +1,7 @@
 use std::{env, error::Error, fs, io::Write};
 
 type RAM = [i16; 100];
-// Store output as a list of lines. Each line of output is 4 characters long
-type Output = Vec<[char; 4]>;
+type Output = String;
 
 struct Registers {
     program_counter: usize,
@@ -61,14 +60,40 @@ fn print_registers(registers: &Registers) {
 }
 
 fn print_output(output: &Output) {
-    let rows = output.into_iter();
-    // Add pipe characters to separate the rows
-    let formatted_output = rows
-        .map(|row| bold(&row.iter().collect::<String>()))
-        .collect::<Vec<String>>()
-        .join(&color_gray("|"));
+    // // Split into "rows" of 3 characters
+    // let output_vec = output.chars().collect::<Vec<char>>();
+    // let rows = output_vec.chunks(4);
+    // // Add pipe characters to separate the rows
+    // let formatted_output = rows
+    //     .map(|row| bold(&row.iter().collect::<String>()))
+    //     .collect::<Vec<String>>()
+    //     .join(&color_gray("|"));
 
-    println!("{}", formatted_output);
+    // println!("{}", formatted_output);
+    const ROW_WIDTH: usize = 4;
+    let chars = output.chars();
+    let mut rows = Vec::<String>::new();
+    rows.push(String::new());
+    let mut current_row = rows.last_mut().unwrap();
+    let mut row_length = 0;
+    for char in chars {
+        // Start a new row if required
+        if char == '\n' {
+            rows.push(String::new());
+            current_row = rows.last_mut().unwrap();
+            row_length = 0;
+            continue;
+        }
+        if row_length > ROW_WIDTH {
+            rows.push(String::new());
+            current_row = rows.last_mut().unwrap();
+            row_length = 0;
+        }
+        // Add our character to the current row
+        current_row.push(char);
+        row_length += 1;
+    }
+    println!("{}", rows.join(&color_gray("|")));
 }
 
 enum ReadInputError {
@@ -180,17 +205,12 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
-                let string_value = format!("{:03}", registers.accumulator);
-                let vec_value: Vec<char> = string_value.chars().collect();
-                let array_value: [char; 4] = vec_value.try_into().unwrap_or_else(|_| {
-                    print_error(format!("Failed to output value {}", string_value).as_str());
-                    ['?'; 4]
-                });
-                output.push(array_value);
+                output.push_str(format!("{}\n", registers.accumulator).as_str());
+                println!("Updated output to {}", output);
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
-                // output.push(
+                output.push(registers.accumulator as u8 as char);
             }
         }
         _ => {
@@ -244,7 +264,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         address_register: 0,
         accumulator: 0,
     };
-    let mut output: Output = Vec::new();
+    let mut output: Output = String::new();
 
     // If a memory dump (.bin file) has been provided, load it into RAM
     let args: Vec<String> = env::args().collect();

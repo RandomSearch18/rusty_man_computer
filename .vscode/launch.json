@@ -22,9 +22,7 @@
       "args": ["demos/ascii_table.bin"],
       "cwd": "${workspaceFolder}",
       "sourceLanguages": ["rust"],
-      "sourceMap": {
-        "/home/mmk21/Code": "/mnt/zorin/home/mmk21/Code"
-      }
+      "breakpointMode": "file"
     }
   ]
 }
