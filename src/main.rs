@@ -1,6 +1,8 @@
 use std::{env, error::Error, fs, io::Write};
 
 type RAM = [i16; 100];
+// Store output as a list of lines. Each line of output is 4 characters long
+type Output = Vec<[char; 4]>;
 
 struct Registers {
     program_counter: usize,
@@ -58,10 +60,8 @@ fn print_registers(registers: &Registers) {
     );
 }
 
-fn print_output(output: &String) {
-    // Split into "rows" of 3 characters
-    let output_vec = output.chars().collect::<Vec<char>>();
-    let rows = output_vec.chunks(4);
+fn print_output(output: &Output) {
+    let rows = output.into_iter();
     // Add pipe characters to separate the rows
     let formatted_output = rows
         .map(|row| bold(&row.iter().collect::<String>()))
@@ -124,7 +124,7 @@ fn apply_overflow(integer: &mut i16) {
     }
 }
 
-fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut String) -> bool {
+fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
     match registers.instruction_register {
         0 => {
             // HLT - Stop (Little Man has a rest)
@@ -180,11 +180,17 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
-                output.push_str(format!("{}", registers.accumulator).as_str());
+                let string_value = format!("{:03}", registers.accumulator);
+                let vec_value: Vec<char> = string_value.chars().collect();
+                let array_value: [char; 4] = vec_value.try_into().unwrap_or_else(|_| {
+                    print_error(format!("Failed to output value {}", string_value).as_str());
+                    ['?'; 4]
+                });
+                output.push(array_value);
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
-                output.push(registers.accumulator as u8 as char);
+                // output.push(
             }
         }
         _ => {
@@ -194,7 +200,7 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
     true
 }
 
-fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut String) -> bool {
+fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
     // Stage 1: Fetch
     let ram_index = registers.program_counter;
     registers.program_counter += 1;
@@ -238,7 +244,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         address_register: 0,
         accumulator: 0,
     };
-    let mut output = String::new();
+    let mut output: Output = Vec::new();
 
     // If a memory dump (.bin file) has been provided, load it into RAM
     let args: Vec<String> = env::args().collect();
