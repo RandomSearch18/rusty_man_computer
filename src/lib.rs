@@ -147,7 +147,12 @@ fn apply_overflow(integer: &mut i16) {
     }
 }
 
-fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
+fn execute_instruction(
+    ram: &mut RAM,
+    registers: &mut Registers,
+    output: &mut Output,
+    config: &Config,
+) -> bool {
     match registers.instruction_register {
         0 => {
             // HLT - Stop (Little Man has a rest)
@@ -179,13 +184,17 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
         6 => {
             // BRA - Branch - use the address given as the address of the next instruction
             registers.program_counter = registers.address_register;
-            println!("BRA: Jumping to address {}", registers.program_counter)
+            if config.print_computer_state {
+                println!("BRA: Jumping to address {}", registers.program_counter)
+            }
         }
         7 => {
             // BRZ - Branch to the address given if the Accumulator is zero
             if registers.accumulator == 0 {
                 registers.program_counter = registers.address_register;
-                println!("BRZ: Jumping to address {}", registers.program_counter)
+                if config.print_computer_state {
+                    println!("BRZ: Jumping to address {}", registers.program_counter)
+                }
             }
         }
         8 => {
@@ -210,11 +219,20 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
                     output.push('\n');
                 }
                 output.push_str(format!("{}", registers.accumulator).as_str());
-                println!("Updated output to {}", output);
+                if config.print_raw_output {
+                    if last_digit_was_number {
+                        print!("\n");
+                    }
+                    print!("{}", registers.accumulator);
+                }
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
-                output.push(registers.accumulator as u8 as char);
+                let character = registers.accumulator as u8 as char;
+                output.push(character);
+                if config.print_raw_output {
+                    print!("{}", character);
+                }
             }
         }
         _ => {
@@ -224,7 +242,12 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
     true
 }
 
-fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
+fn clock_cycle(
+    ram: &mut RAM,
+    registers: &mut Registers,
+    output: &mut Output,
+    config: &Config,
+) -> bool {
     // Stage 1: Fetch
     let ram_index = registers.program_counter;
     registers.program_counter += 1;
@@ -237,7 +260,7 @@ fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut Output) ->
     registers.address_register = instruction_address as usize;
 
     // Stage 3: Execute
-    execute_instruction(ram, registers, output)
+    execute_instruction(ram, registers, output, config)
 }
 
 fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
@@ -259,6 +282,10 @@ fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
 
 pub struct Config {
     pub load_ram_file_path: Option<PathBuf>,
+    /// If the register values, output buffer, RAM values, and branch messages should be printed after every clock cycle
+    pub print_computer_state: bool,
+    /// If output should be directly and immediately printed when a OUT/OTC instruction is executed
+    pub print_raw_output: bool,
 }
 
 impl Config {
@@ -275,6 +302,8 @@ impl Config {
                 );
                 args.ram_legacy
             }),
+            print_computer_state: !args.output_only,
+            print_raw_output: args.output_only,
         }
     }
 }
@@ -288,6 +317,9 @@ pub struct Args {
     /// Path to a memory dump (.bin) file to load into RAM
     #[arg(long)]
     ram: Option<PathBuf>,
+    /// Only print the output of the LMC, excluding the RAM and register values.
+    #[arg(long)]
+    output_only: bool,
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -304,7 +336,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     // If a memory dump (.bin file) has been provided, load it into RAM
     match config.load_ram_file_path {
-        Some(file_path) => {
+        Some(ref file_path) => {
             let data = fs::read(file_path)?;
             load_data_to_ram(&mut ram, data);
         }
@@ -315,11 +347,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let mut should_continue = true;
     while should_continue {
-        println!();
-        print_registers(&registers);
-        print_output_one_line(&output);
-        print_ram(&ram);
-        should_continue = clock_cycle(&mut ram, &mut registers, &mut output);
+        if config.print_computer_state {
+            println!();
+            print_registers(&registers);
+            print_output_one_line(&output);
+            print_ram(&ram);
+        }
+        should_continue = clock_cycle(&mut ram, &mut registers, &mut output, &config);
     }
 
     Ok(())
