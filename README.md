@@ -28,7 +28,7 @@ The demo programs are taken from the online LMC simulator, so credit for them go
 > Output the sum of two numbers
 
 ```bash
-cargo run --bin rusty_man_computer --memory demos/add.bin
+cargo run --bin rusty_man_computer -- --ram demos/add.bin
 ```
 
 #### Addition and subtraction
@@ -38,19 +38,19 @@ cargo run --bin rusty_man_computer --memory demos/add.bin
 > and the third minus the first
 
 ```bash
-cargo run --bin rusty_man_computer --memory demos/add-subtract.bin
+cargo run --bin rusty_man_computer -- --ram demos/add-subtract.bin
 ```
 
 #### Basic ASCII characters
 
 ```bash
-cargo run --bin rusty_man_computer --memory demos/ascii.bin
+cargo run --bin rusty_man_computer -- --ram demos/ascii.bin
 ```
 
 #### Basic ASCII character table
 
 ```bash
-cargo run --bin rusty_man_computer --memory demos/ascii_table.bin
+cargo run --bin rusty_man_computer -- --ram demos/ascii_table.bin
 ```
 
 ### Running your own programs
@@ -62,14 +62,21 @@ At the moment, you have to use a text editor to ensure that each memory cell is 
 Then you can run `bin_creator`, giving it the file name that the binary file should be written to, e.g.
 
 ```bash
-cargo run --bin bin_creator my_program.bin
+cargo run --bin bin_creator -- my_program.bin
 ```
 
 Then you can run the program as described above, e.g.
 
 ```bash
-cargo run --bin rusty_man_computer --memory my_program.bin
+cargo run --bin rusty_man_computer -- --ram my_program.bin
 ```
+
+### Command-line arguments
+
+- `--ram` specifies a path to a `.bin` file that's used to populate the RAM of the emulator. Essentially, it's the program that you want to run. If you omit this argument, then the emulator will start with empty memory, and not do anything.
+- `--output-only` is a flag that disables printing the emulated computer's state every clock cycle. Output is simply printed as it's generated, and input prompts are still displayed.
+- `--help` (`-h`) prints the help message, which shows a list of command-line arguments.
+- `--version` (`-V`) prints the program name and version.
 
 ## Features
 
