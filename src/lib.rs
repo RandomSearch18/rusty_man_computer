@@ -2,7 +2,82 @@ use clap::Parser;
 use std::{error::Error, fs, io::Write, path::PathBuf};
 
 type RAM = [i16; 100];
-type Output = String;
+
+struct OutputConfig {
+    immediately_print_output: bool,
+}
+
+struct Output {
+    buffer: String,
+    config: OutputConfig,
+}
+
+impl Output {
+    fn new(config: OutputConfig) -> Output {
+        Output {
+            buffer: String::new(),
+            config,
+        }
+    }
+
+    fn push_char(&mut self, character: char) {
+        self.buffer.push(character);
+        if self.config.immediately_print_output {
+            print!("{}", character);
+        }
+    }
+
+    fn push_int(&mut self, integer: i16) {
+        // If two numbers are printed in a row, separate them with an newline
+        // This seems to be what the online LMC simulator does
+        let last_digit_was_number = self.chars().last().unwrap_or(' ').is_numeric();
+        if last_digit_was_number {
+            self.push_char('\n');
+        }
+        self.buffer.push_str(format!("{}", integer).as_str());
+        if self.config.immediately_print_output {
+            print!("{}", integer);
+        }
+    }
+
+    fn chars(&self) -> std::str::Chars {
+        self.buffer.chars()
+    }
+
+    /// Splits the output into lines of 4 characters maximum.
+    /// Does a line break when 4 characters is reached, or a \n is reached
+    fn split_into_lines(&self, max_line_length: isize) -> Vec<String> {
+        let chars = self.buffer.chars();
+        let mut lines = Vec::<String>::new();
+        lines.push(String::new());
+        let mut current_row = lines.last_mut().unwrap();
+        let mut row_length = 0;
+        for char in chars {
+            if char == '\n' {
+                lines.push(String::new());
+                current_row = lines.last_mut().unwrap();
+                row_length = 0;
+                continue;
+            }
+            if row_length >= max_line_length {
+                lines.push(String::new());
+                current_row = lines.last_mut().unwrap();
+                row_length = 0;
+            }
+            // Add our character to the current row
+            current_row.push(char);
+            row_length += 1;
+        }
+        lines
+    }
+
+    /// Prints the output on one line by separating the output lines with a pipe
+    fn print_on_one_line(&self) {
+        const LINE_WIDTH: isize = 4;
+        let rows = self.split_into_lines(LINE_WIDTH);
+        println!("{}", rows.join(&color_gray("|")));
+    }
+}
 
 struct Registers {
     program_counter: usize,
@@ -60,35 +135,6 @@ fn print_registers(registers: &Registers) {
     );
 }
 
-fn print_output(output: &Output) {
-    // Splits the output into "lines" (rows) of 4 characters maximum
-    // Does a line break when 4 characters is reached, or a \n is reached
-    const MAX_WIDTH: usize = 4;
-    let chars = output.chars();
-    let mut rows = Vec::<String>::new();
-    rows.push(String::new());
-    let mut current_row = rows.last_mut().unwrap();
-    let mut row_length = 0;
-    for char in chars {
-        // Start a new row if required
-        if char == '\n' {
-            rows.push(String::new());
-            current_row = rows.last_mut().unwrap();
-            row_length = 0;
-            continue;
-        }
-        if row_length >= MAX_WIDTH {
-            rows.push(String::new());
-            current_row = rows.last_mut().unwrap();
-            row_length = 0;
-        }
-        // Add our character to the current row
-        current_row.push(char);
-        row_length += 1;
-    }
-    println!("{}", rows.join(&color_gray("|")));
-}
-
 enum ReadInputError {
     Unrecoverable(std::io::Error),
     Validation,
@@ -142,7 +188,12 @@ fn apply_overflow(integer: &mut i16) {
     }
 }
 
-fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
+fn execute_instruction(
+    ram: &mut RAM,
+    registers: &mut Registers,
+    output: &mut Output,
+    config: &Config,
+) -> bool {
     match registers.instruction_register {
         0 => {
             // HLT - Stop (Little Man has a rest)
@@ -174,13 +225,17 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
         6 => {
             // BRA - Branch - use the address given as the address of the next instruction
             registers.program_counter = registers.address_register;
-            println!("BRA: Jumping to address {}", registers.program_counter)
+            if config.print_computer_state {
+                println!("BRA: Jumping to address {}", registers.program_counter)
+            }
         }
         7 => {
             // BRZ - Branch to the address given if the Accumulator is zero
             if registers.accumulator == 0 {
                 registers.program_counter = registers.address_register;
-                println!("BRZ: Jumping to address {}", registers.program_counter)
+                if config.print_computer_state {
+                    println!("BRZ: Jumping to address {}", registers.program_counter)
+                }
             }
         }
         8 => {
@@ -198,18 +253,12 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
-                // If two numbers are printed in a row, separate them with an newline
-                // This seems to be what the online LMC simulator does
-                let last_digit_was_number = output.chars().last().unwrap_or(' ').is_numeric();
-                if last_digit_was_number {
-                    output.push('\n');
-                }
-                output.push_str(format!("{}", registers.accumulator).as_str());
-                println!("Updated output to {}", output);
+                output.push_int(registers.accumulator);
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
-                output.push(registers.accumulator as u8 as char);
+                let character = registers.accumulator as u8 as char;
+                output.push_char(character);
             }
         }
         _ => {
@@ -219,7 +268,12 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
     true
 }
 
-fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
+fn clock_cycle(
+    ram: &mut RAM,
+    registers: &mut Registers,
+    output: &mut Output,
+    config: &Config,
+) -> bool {
     // Stage 1: Fetch
     let ram_index = registers.program_counter;
     registers.program_counter += 1;
@@ -232,7 +286,7 @@ fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut Output) ->
     registers.address_register = instruction_address as usize;
 
     // Stage 3: Execute
-    execute_instruction(ram, registers, output)
+    execute_instruction(ram, registers, output, config)
 }
 
 fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
@@ -254,6 +308,10 @@ fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
 
 pub struct Config {
     pub load_ram_file_path: Option<PathBuf>,
+    /// If the register values, output buffer, RAM values, and branch messages should be printed after every clock cycle
+    pub print_computer_state: bool,
+    /// If output should be directly and immediately printed when a OUT/OTC instruction is executed
+    pub print_raw_output: bool,
 }
 
 impl Config {
@@ -270,6 +328,8 @@ impl Config {
                 );
                 args.ram_legacy
             }),
+            print_computer_state: !args.output_only,
+            print_raw_output: args.output_only,
         }
     }
 }
@@ -283,6 +343,9 @@ pub struct Args {
     /// Path to a memory dump (.bin) file to load into RAM
     #[arg(long)]
     ram: Option<PathBuf>,
+    /// Only print the output of the LMC, excluding the RAM and register values.
+    #[arg(long)]
+    output_only: bool,
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -295,11 +358,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         address_register: 0,
         accumulator: 0,
     };
-    let mut output: Output = String::new();
+    let mut output = Output::new(OutputConfig {
+        immediately_print_output: config.print_raw_output,
+    });
 
     // If a memory dump (.bin file) has been provided, load it into RAM
     match config.load_ram_file_path {
-        Some(file_path) => {
+        Some(ref file_path) => {
             let data = fs::read(file_path)?;
             load_data_to_ram(&mut ram, data);
         }
@@ -310,11 +375,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let mut should_continue = true;
     while should_continue {
-        println!();
-        print_registers(&registers);
-        print_output(&output);
-        print_ram(&ram);
-        should_continue = clock_cycle(&mut ram, &mut registers, &mut output);
+        if config.print_computer_state {
+            println!();
+            print_registers(&registers);
+            output.print_on_one_line();
+            print_ram(&ram);
+        }
+        should_continue = clock_cycle(&mut ram, &mut registers, &mut output, &config);
     }
 
     Ok(())
