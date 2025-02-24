@@ -1,4 +1,5 @@
-use std::{error::Error, fs, io::Write};
+use clap::Parser;
+use std::{error::Error, fs, io::Write, path::PathBuf};
 
 type RAM = [i16; 100];
 type Output = String;
@@ -252,16 +253,26 @@ fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
 }
 
 pub struct Config {
-    pub load_memory_filename: Option<String>,
+    pub load_memory_file_path: Option<PathBuf>,
 }
 
 impl Config {
-    pub fn from_args(args: &Vec<String>) -> Config {
-        let filename = args.get(1).cloned();
+    pub fn from_args(args: Args) -> Config {
         Config {
-            load_memory_filename: filename,
+            load_memory_file_path: args.memory.or(args.memory_legacy),
         }
     }
+}
+
+#[derive(Parser)]
+#[command(version)]
+pub struct Args {
+    // Positional arg for memory file (kept for backwards compatibility)
+    #[arg(hide = true)]
+    memory_legacy: Option<PathBuf>,
+    /// Path to a memory dump (.bin) file to load into RAM
+    #[arg(long)]
+    memory: Option<PathBuf>,
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -277,9 +288,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let mut output: Output = String::new();
 
     // If a memory dump (.bin file) has been provided, load it into RAM
-    match config.load_memory_filename {
-        Some(filename) => {
-            let data = fs::read(filename)?;
+    match config.load_memory_file_path {
+        Some(file_path) => {
+            let data = fs::read(file_path)?;
             load_data_to_ram(&mut ram, data);
         }
         None => {
