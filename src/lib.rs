@@ -253,13 +253,23 @@ fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
 }
 
 pub struct Config {
-    pub load_memory_file_path: Option<PathBuf>,
+    pub load_ram_file_path: Option<PathBuf>,
 }
 
 impl Config {
     pub fn from_args(args: Args) -> Config {
+        if args.ram_legacy.is_some() && args.ram.is_some() {
+            print_error("Warning: Ignoring positional argument and using --ram argument instead.");
+            print_error("Specifying a RAM file without --ram is no longer recommended.");
+        }
+
         Config {
-            load_memory_file_path: args.memory.or(args.memory_legacy),
+            load_ram_file_path: args.ram.or_else(|| {
+                eprintln!(
+                    "Note: It is recommended to use the --ram argument to specify a RAM file."
+                );
+                args.ram_legacy
+            }),
         }
     }
 }
@@ -269,10 +279,10 @@ impl Config {
 pub struct Args {
     // Positional arg for memory file (kept for backwards compatibility)
     #[arg(hide = true)]
-    memory_legacy: Option<PathBuf>,
+    ram_legacy: Option<PathBuf>,
     /// Path to a memory dump (.bin) file to load into RAM
     #[arg(long)]
-    memory: Option<PathBuf>,
+    ram: Option<PathBuf>,
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -288,13 +298,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let mut output: Output = String::new();
 
     // If a memory dump (.bin file) has been provided, load it into RAM
-    match config.load_memory_file_path {
+    match config.load_ram_file_path {
         Some(file_path) => {
             let data = fs::read(file_path)?;
             load_data_to_ram(&mut ram, data);
         }
         None => {
-            println!("Initial memory (.bin) file not provided. RAM will be empty.");
+            println!("Initial RAM (.bin) file not provided. RAM will be empty.");
         }
     }
 
