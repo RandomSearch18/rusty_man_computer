@@ -251,8 +251,11 @@ fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
     println!("Loaded data into {} RAM addresses", touched_addresses);
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    println!("Little Man Computer implemented in Rust!");
+struct Config {
+    load_memory_filename: Option<String>,
+}
+
+fn run(config: Config) -> Result<(), Box<dyn Error>> {
     // Array of 100 i16 ints
     let mut ram: RAM = [0; 100];
     // Let's get some registers initialised too
@@ -265,11 +268,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut output: Output = String::new();
 
     // If a memory dump (.bin file) has been provided, load it into RAM
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
-        let filename = &args[1];
-        let data = fs::read(filename)?;
-        load_data_to_ram(&mut ram, data);
+    match config.load_memory_filename {
+        Some(filename) => {
+            let data = fs::read(filename)?;
+            load_data_to_ram(&mut ram, data);
+        }
+        None => {
+            println!("Initial memory (.bin) file not provided. RAM will be empty.");
+        }
     }
 
     let mut should_continue = true;
@@ -282,4 +288,23 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+impl Config {
+    fn from_args(args: &Vec<String>) -> Config {
+        let filename = args.get(1).cloned();
+        Config {
+            load_memory_filename: filename,
+        }
+    }
+}
+
+fn main() -> () {
+    println!("Little Man Computer implemented in Rust!");
+    let args: Vec<String> = env::args().collect();
+    let config = Config::from_args(&args);
+
+    if let Err(e) = run(config) {
+        print_error(&format!("Application error: {}", e));
+    }
 }
