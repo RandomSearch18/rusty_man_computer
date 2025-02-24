@@ -60,17 +60,9 @@ fn print_registers(registers: &Registers) {
 }
 
 fn print_output(output: &Output) {
-    // // Split into "rows" of 3 characters
-    // let output_vec = output.chars().collect::<Vec<char>>();
-    // let rows = output_vec.chunks(4);
-    // // Add pipe characters to separate the rows
-    // let formatted_output = rows
-    //     .map(|row| bold(&row.iter().collect::<String>()))
-    //     .collect::<Vec<String>>()
-    //     .join(&color_gray("|"));
-
-    // println!("{}", formatted_output);
-    const ROW_WIDTH: usize = 4;
+    // Splits the output into "lines" (rows) of 4 characters maximum
+    // Does a line break when 4 characters is reached, or a \n is reached
+    const MAX_WIDTH: usize = 4;
     let chars = output.chars();
     let mut rows = Vec::<String>::new();
     rows.push(String::new());
@@ -84,7 +76,7 @@ fn print_output(output: &Output) {
             row_length = 0;
             continue;
         }
-        if row_length > ROW_WIDTH {
+        if row_length >= MAX_WIDTH {
             rows.push(String::new());
             current_row = rows.last_mut().unwrap();
             row_length = 0;
@@ -205,7 +197,13 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Ou
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
-                output.push_str(format!("{}\n", registers.accumulator).as_str());
+                // If two numbers are printed in a row, separate them with an newline
+                // This seems to be what the online LMC simulator does
+                let last_digit_was_number = output.chars().last().unwrap_or(' ').is_numeric();
+                if last_digit_was_number {
+                    output.push('\n');
+                }
+                output.push_str(format!("{}", registers.accumulator).as_str());
                 println!("Updated output to {}", output);
             }
             if registers.address_register == 22 {
