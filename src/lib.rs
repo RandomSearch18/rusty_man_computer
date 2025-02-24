@@ -30,7 +30,7 @@ fn bold(text: &str) -> String {
 }
 
 pub fn print_error(error: &str) {
-    println!("{}", color_red(error));
+    eprintln!("{}", color_red(error));
 }
 
 fn print_ram(ram: &RAM) {
