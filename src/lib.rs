@@ -60,32 +60,37 @@ fn print_registers(registers: &Registers) {
     );
 }
 
-fn print_output(output: &Output) {
-    // Splits the output into "lines" (rows) of 4 characters maximum
-    // Does a line break when 4 characters is reached, or a \n is reached
-    const MAX_WIDTH: usize = 4;
+/// Splits the output into lines of 4 characters maximum.
+/// Does a line break when 4 characters is reached, or a \n is reached
+fn split_output_into_lines(output: &Output, max_line_length: isize) -> Vec<String> {
     let chars = output.chars();
-    let mut rows = Vec::<String>::new();
-    rows.push(String::new());
-    let mut current_row = rows.last_mut().unwrap();
+    let mut lines = Vec::<String>::new();
+    lines.push(String::new());
+    let mut current_row = lines.last_mut().unwrap();
     let mut row_length = 0;
     for char in chars {
-        // Start a new row if required
         if char == '\n' {
-            rows.push(String::new());
-            current_row = rows.last_mut().unwrap();
+            lines.push(String::new());
+            current_row = lines.last_mut().unwrap();
             row_length = 0;
             continue;
         }
-        if row_length >= MAX_WIDTH {
-            rows.push(String::new());
-            current_row = rows.last_mut().unwrap();
+        if row_length >= max_line_length {
+            lines.push(String::new());
+            current_row = lines.last_mut().unwrap();
             row_length = 0;
         }
         // Add our character to the current row
         current_row.push(char);
         row_length += 1;
     }
+    lines
+}
+
+/// Prints the output on one line by separating the output lines with a pipe
+fn print_output_one_line(output: &Output) {
+    const LINE_WIDTH: isize = 4;
+    let rows = split_output_into_lines(output, LINE_WIDTH);
     println!("{}", rows.join(&color_gray("|")));
 }
 
@@ -312,7 +317,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     while should_continue {
         println!();
         print_registers(&registers);
-        print_output(&output);
+        print_output_one_line(&output);
         print_ram(&ram);
         should_continue = clock_cycle(&mut ram, &mut registers, &mut output);
     }
