@@ -1,6 +1,7 @@
 use std::{env, error::Error, fs, io::Write};
 
 type RAM = [i16; 100];
+type Output = String;
 
 struct Registers {
     program_counter: usize,
@@ -58,17 +59,33 @@ fn print_registers(registers: &Registers) {
     );
 }
 
-fn print_output(output: &String) {
-    // Split into "rows" of 3 characters
-    let output_vec = output.chars().collect::<Vec<char>>();
-    let rows = output_vec.chunks(4);
-    // Add pipe characters to separate the rows
-    let formatted_output = rows
-        .map(|row| bold(&row.iter().collect::<String>()))
-        .collect::<Vec<String>>()
-        .join(&color_gray("|"));
-
-    println!("{}", formatted_output);
+fn print_output(output: &Output) {
+    // Splits the output into "lines" (rows) of 4 characters maximum
+    // Does a line break when 4 characters is reached, or a \n is reached
+    const MAX_WIDTH: usize = 4;
+    let chars = output.chars();
+    let mut rows = Vec::<String>::new();
+    rows.push(String::new());
+    let mut current_row = rows.last_mut().unwrap();
+    let mut row_length = 0;
+    for char in chars {
+        // Start a new row if required
+        if char == '\n' {
+            rows.push(String::new());
+            current_row = rows.last_mut().unwrap();
+            row_length = 0;
+            continue;
+        }
+        if row_length >= MAX_WIDTH {
+            rows.push(String::new());
+            current_row = rows.last_mut().unwrap();
+            row_length = 0;
+        }
+        // Add our character to the current row
+        current_row.push(char);
+        row_length += 1;
+    }
+    println!("{}", rows.join(&color_gray("|")));
 }
 
 enum ReadInputError {
@@ -124,7 +141,7 @@ fn apply_overflow(integer: &mut i16) {
     }
 }
 
-fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut String) -> bool {
+fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
     match registers.instruction_register {
         0 => {
             // HLT - Stop (Little Man has a rest)
@@ -180,7 +197,14 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
+                // If two numbers are printed in a row, separate them with an newline
+                // This seems to be what the online LMC simulator does
+                let last_digit_was_number = output.chars().last().unwrap_or(' ').is_numeric();
+                if last_digit_was_number {
+                    output.push('\n');
+                }
                 output.push_str(format!("{}", registers.accumulator).as_str());
+                println!("Updated output to {}", output);
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
@@ -194,7 +218,7 @@ fn execute_instruction(ram: &mut RAM, registers: &mut Registers, output: &mut St
     true
 }
 
-fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut String) -> bool {
+fn clock_cycle(ram: &mut RAM, registers: &mut Registers, output: &mut Output) -> bool {
     // Stage 1: Fetch
     let ram_index = registers.program_counter;
     registers.program_counter += 1;
@@ -238,7 +262,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         address_register: 0,
         accumulator: 0,
     };
-    let mut output = String::new();
+    let mut output: Output = String::new();
 
     // If a memory dump (.bin file) has been provided, load it into RAM
     let args: Vec<String> = env::args().collect();
