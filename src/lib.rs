@@ -2,7 +2,82 @@ use clap::Parser;
 use std::{error::Error, fs, io::Write, path::PathBuf};
 
 type RAM = [i16; 100];
-type Output = String;
+
+struct OutputConfig {
+    immediately_print_output: bool,
+}
+
+struct Output {
+    buffer: String,
+    config: OutputConfig,
+}
+
+impl Output {
+    fn new(config: OutputConfig) -> Output {
+        Output {
+            buffer: String::new(),
+            config,
+        }
+    }
+
+    fn push_char(&mut self, character: char) {
+        self.buffer.push(character);
+        if self.config.immediately_print_output {
+            print!("{}", character);
+        }
+    }
+
+    fn push_int(&mut self, integer: i16) {
+        // If two numbers are printed in a row, separate them with an newline
+        // This seems to be what the online LMC simulator does
+        let last_digit_was_number = self.chars().last().unwrap_or(' ').is_numeric();
+        if last_digit_was_number {
+            self.push_char('\n');
+        }
+        self.buffer.push_str(format!("{}", integer).as_str());
+        if self.config.immediately_print_output {
+            print!("{}", integer);
+        }
+    }
+
+    fn chars(&self) -> std::str::Chars {
+        self.buffer.chars()
+    }
+
+    /// Splits the output into lines of 4 characters maximum.
+    /// Does a line break when 4 characters is reached, or a \n is reached
+    fn split_into_lines(&self, max_line_length: isize) -> Vec<String> {
+        let chars = self.buffer.chars();
+        let mut lines = Vec::<String>::new();
+        lines.push(String::new());
+        let mut current_row = lines.last_mut().unwrap();
+        let mut row_length = 0;
+        for char in chars {
+            if char == '\n' {
+                lines.push(String::new());
+                current_row = lines.last_mut().unwrap();
+                row_length = 0;
+                continue;
+            }
+            if row_length >= max_line_length {
+                lines.push(String::new());
+                current_row = lines.last_mut().unwrap();
+                row_length = 0;
+            }
+            // Add our character to the current row
+            current_row.push(char);
+            row_length += 1;
+        }
+        lines
+    }
+
+    /// Prints the output on one line by separating the output lines with a pipe
+    fn print_on_one_line(&self) {
+        const LINE_WIDTH: isize = 4;
+        let rows = self.split_into_lines(LINE_WIDTH);
+        println!("{}", rows.join(&color_gray("|")));
+    }
+}
 
 struct Registers {
     program_counter: usize,
@@ -58,40 +133,6 @@ fn print_registers(registers: &Registers) {
         bold(&format!("{:02}", registers.address_register)),
         bold(&format!("{:03}", registers.accumulator))
     );
-}
-
-/// Splits the output into lines of 4 characters maximum.
-/// Does a line break when 4 characters is reached, or a \n is reached
-fn split_output_into_lines(output: &Output, max_line_length: isize) -> Vec<String> {
-    let chars = output.chars();
-    let mut lines = Vec::<String>::new();
-    lines.push(String::new());
-    let mut current_row = lines.last_mut().unwrap();
-    let mut row_length = 0;
-    for char in chars {
-        if char == '\n' {
-            lines.push(String::new());
-            current_row = lines.last_mut().unwrap();
-            row_length = 0;
-            continue;
-        }
-        if row_length >= max_line_length {
-            lines.push(String::new());
-            current_row = lines.last_mut().unwrap();
-            row_length = 0;
-        }
-        // Add our character to the current row
-        current_row.push(char);
-        row_length += 1;
-    }
-    lines
-}
-
-/// Prints the output on one line by separating the output lines with a pipe
-fn print_output_one_line(output: &Output) {
-    const LINE_WIDTH: isize = 4;
-    let rows = split_output_into_lines(output, LINE_WIDTH);
-    println!("{}", rows.join(&color_gray("|")));
 }
 
 enum ReadInputError {
@@ -212,27 +253,12 @@ fn execute_instruction(
             }
             if registers.address_register == 2 {
                 // OUT - Copy to Output
-                // If two numbers are printed in a row, separate them with an newline
-                // This seems to be what the online LMC simulator does
-                let last_digit_was_number = output.chars().last().unwrap_or(' ').is_numeric();
-                if last_digit_was_number {
-                    output.push('\n');
-                }
-                output.push_str(format!("{}", registers.accumulator).as_str());
-                if config.print_raw_output {
-                    if last_digit_was_number {
-                        print!("\n");
-                    }
-                    print!("{}", registers.accumulator);
-                }
+                output.push_int(registers.accumulator);
             }
             if registers.address_register == 22 {
                 // OTC - Output accumulator as a character (Non-standard instruction)
                 let character = registers.accumulator as u8 as char;
-                output.push(character);
-                if config.print_raw_output {
-                    print!("{}", character);
-                }
+                output.push_char(character);
             }
         }
         _ => {
@@ -332,7 +358,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         address_register: 0,
         accumulator: 0,
     };
-    let mut output: Output = String::new();
+    let mut output = Output::new(OutputConfig {
+        immediately_print_output: config.print_raw_output,
+    });
 
     // If a memory dump (.bin file) has been provided, load it into RAM
     match config.load_ram_file_path {
@@ -350,7 +378,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         if config.print_computer_state {
             println!();
             print_registers(&registers);
-            print_output_one_line(&output);
+            output.print_on_one_line();
             print_ram(&ram);
         }
         should_continue = clock_cycle(&mut ram, &mut registers, &mut output, &config);
