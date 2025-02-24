@@ -28,7 +28,7 @@ The demo programs are taken from the online LMC simulator, so credit for them go
 > Output the sum of two numbers
 
 ```bash
-cargo run --bin rusty_man_computer demos/add.bin
+cargo run --bin rusty_man_computer --memory demos/add.bin
 ```
 
 #### Addition and subtraction
@@ -38,19 +38,19 @@ cargo run --bin rusty_man_computer demos/add.bin
 > and the third minus the first
 
 ```bash
-cargo run --bin rusty_man_computer demos/add-subtract.bin
+cargo run --bin rusty_man_computer --memory demos/add-subtract.bin
 ```
 
 #### Basic ASCII characters
 
 ```bash
-cargo run --bin rusty_man_computer demos/ascii.bin
+cargo run --bin rusty_man_computer --memory demos/ascii.bin
 ```
 
 #### Basic ASCII character table
 
 ```bash
-cargo run --bin rusty_man_computer demos/ascii_table.bin
+cargo run --bin rusty_man_computer --memory demos/ascii_table.bin
 ```
 
 ### Running your own programs
@@ -68,7 +68,7 @@ cargo run --bin bin_creator my_program.bin
 Then you can run the program as described above, e.g.
 
 ```bash
-cargo run --bin rusty_man_computer my_program.bin
+cargo run --bin rusty_man_computer --memory my_program.bin
 ```
 
 ## Features
