@@ -7,7 +7,7 @@ struct OutputConfig {
     immediately_print_output: bool,
 }
 
-struct Output {
+pub struct Output {
     buffer: String,
     config: OutputConfig,
 }
@@ -77,6 +77,10 @@ impl Output {
         let rows = self.split_into_lines(LINE_WIDTH);
         println!("{}", rows.join(&color_gray("|")));
     }
+
+    pub fn read_all(&self) -> String {
+        self.buffer.clone()
+    }
 }
 
 struct Registers {
@@ -86,16 +90,16 @@ struct Registers {
     accumulator: i16,
 }
 
-struct Computer {
+pub struct Computer {
     // Array of 100 i16 ints. Valid values are -999 to 999
     ram: RAM,
     registers: Registers,
-    output: Output,
+    pub output: Output,
     config: Config,
 }
 
 impl Computer {
-    fn new(config: Config) -> Computer {
+    pub fn new(config: Config) -> Computer {
         Computer {
             ram: [0; 100],
             registers: Registers {
@@ -113,7 +117,7 @@ impl Computer {
 
     /// Initialises RAM with the data from the file provided in the config.
     /// If no file is provided, RAM stays empty (untouched).
-    fn initialize_ram_from_file(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn initialize_ram_from_file(&mut self) -> Result<(), Box<dyn Error>> {
         // If a memory dump (.bin file) has been provided, load it into RAM
         match self.config.load_ram_file_path {
             Some(ref file_path) => {
@@ -130,7 +134,7 @@ impl Computer {
     }
 
     /// Returns the number of addresses modified
-    fn load_data_to_ram(&mut self, data_bytes: Vec<u8>) -> i32 {
+    pub fn load_data_to_ram(&mut self, data_bytes: Vec<u8>) -> i32 {
         let mut touched_addresses = 0;
         for (i, &byte) in data_bytes.iter().enumerate() {
             if i >= self.ram.len() * 2 {
@@ -147,7 +151,7 @@ impl Computer {
         touched_addresses
     }
 
-    fn clock_cycle(&mut self) -> bool {
+    pub fn clock_cycle(&mut self) -> bool {
         // Stage 1: Fetch
         let ram_index = self.registers.program_counter;
         self.registers.program_counter += 1;
@@ -268,7 +272,7 @@ impl Computer {
         }
     }
 
-    fn run(&mut self) {
+    pub fn run(&mut self) {
         let mut should_continue = true;
         while should_continue {
             if self.config.print_computer_state {
