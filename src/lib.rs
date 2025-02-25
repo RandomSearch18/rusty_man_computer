@@ -86,6 +86,202 @@ struct Registers {
     accumulator: i16,
 }
 
+struct Computer {
+    // Array of 100 i16 ints. Valid values are -999 to 999
+    ram: RAM,
+    registers: Registers,
+    output: Output,
+    config: Config,
+}
+
+impl Computer {
+    fn new(config: Config) -> Computer {
+        Computer {
+            ram: [0; 100],
+            registers: Registers {
+                program_counter: 0,
+                instruction_register: 0,
+                address_register: 0,
+                accumulator: 0,
+            },
+            output: Output::new(OutputConfig {
+                immediately_print_output: config.print_raw_output,
+            }),
+            config: config,
+        }
+    }
+
+    /// Initialises RAM with the data from the file provided in the config.
+    /// If no file is provided, RAM stays empty (untouched).
+    fn initialize_ram_from_file(&mut self) -> Result<(), Box<dyn Error>> {
+        // If a memory dump (.bin file) has been provided, load it into RAM
+        match self.config.load_ram_file_path {
+            Some(ref file_path) => {
+                let data = fs::read(file_path)?;
+                let touched_addresses = self.load_data_to_ram(data);
+                println!("Loaded {} data cells into RAM", touched_addresses);
+                Ok(())
+            }
+            None => {
+                println!("Initial RAM (.bin) file not provided. RAM will be empty.");
+                Ok(())
+            }
+        }
+    }
+
+    /// Returns the number of addresses modified
+    fn load_data_to_ram(&mut self, data_bytes: Vec<u8>) -> i32 {
+        let mut touched_addresses = 0;
+        for (i, &byte) in data_bytes.iter().enumerate() {
+            if i >= self.ram.len() * 2 {
+                break;
+            }
+            let target_address = i / 2;
+            if i % 2 == 0 {
+                self.ram[target_address] = (byte as i16) << 8;
+                touched_addresses += 1;
+            } else {
+                self.ram[target_address] += byte as i16;
+            }
+        }
+        touched_addresses
+    }
+
+    fn clock_cycle(&mut self) -> bool {
+        // Stage 1: Fetch
+        let ram_index = self.registers.program_counter;
+        self.registers.program_counter += 1;
+
+        // Stage 2: Decode
+        let instruction = self.ram[ram_index];
+        let instruction_code = instruction / 100;
+        let instruction_address = instruction % 100;
+        self.registers.instruction_register = instruction_code;
+        self.registers.address_register = instruction_address as usize;
+
+        // Stage 3: Execute
+        self.execute_instruction()
+    }
+
+    /// Returns `false` if the computer should halt, and `true` otherwise
+    fn execute_instruction(&mut self) -> bool {
+        let reg = &mut self.registers;
+        let ram = &mut self.ram;
+        let output = &mut self.output;
+        match reg.instruction_register {
+            0 => {
+                // HLT - Stop (Little Man has a rest)
+                println!("\n{}", bold("Halted!"));
+                return false;
+            }
+            1 => {
+                // ADD - Add the contents of the memory address to the Accumulator
+                reg.accumulator += ram[reg.address_register];
+                apply_overflow(&mut reg.accumulator);
+            }
+            2 => {
+                // SUB - Subtract the contents of the memory address from the Accumulator
+                reg.accumulator -= ram[reg.address_register];
+                apply_overflow(&mut reg.accumulator);
+            }
+            3 => {
+                // STA or STO - Store the value in the Accumulator in the memory address given
+                ram[reg.address_register] = reg.accumulator;
+            }
+            4 => {
+                // This code is unused and gives an error
+                panic!("Opcode 4 is not allowed!");
+            }
+            5 => {
+                // LDA - Load the Accumulator with the contents of the memory address given
+                reg.accumulator = ram[reg.address_register];
+            }
+            6 => {
+                // BRA - Branch - use the address given as the address of the next instruction
+                reg.program_counter = reg.address_register;
+                if self.config.print_computer_state {
+                    println!("BRA: Jumping to address {}", reg.program_counter)
+                }
+            }
+            7 => {
+                // BRZ - Branch to the address given if the Accumulator is zero
+                if reg.accumulator == 0 {
+                    reg.program_counter = reg.address_register;
+                    if self.config.print_computer_state {
+                        println!("BRZ: Jumping to address {}", reg.program_counter)
+                    }
+                }
+            }
+            8 => {
+                // BRP - Branch to the address given if the Accumulator is zero or positive
+                if reg.accumulator >= 0 {
+                    reg.program_counter = reg.address_register;
+                }
+            }
+            9 => {
+                if reg.address_register == 1 {
+                    // INP - Take from Input
+                    let prompt = format!("INP: Number input: {}", BOLD);
+                    let input_provided = read_input_until_valid(&prompt).unwrap_or_else(|_| 0);
+                    reg.accumulator = input_provided;
+                }
+                if reg.address_register == 2 {
+                    // OUT - Copy to Output
+                    output.push_int(reg.accumulator);
+                }
+                if reg.address_register == 22 {
+                    // OTC - Output accumulator as a character (Non-standard instruction)
+                    let character = reg.accumulator as u8 as char;
+                    output.push_char(character);
+                }
+            }
+            _ => {
+                panic!("Unhandled opcode: {}", reg.instruction_register);
+            }
+        }
+        true
+    }
+
+    fn print_registers(&self) {
+        println!(
+            "PC: {}, Instruction: {}, Addr: {}, Acc: {}",
+            bold(&format!("{:02}", self.registers.program_counter)),
+            bold(&format!("{:01}", self.registers.instruction_register)),
+            bold(&format!("{:02}", self.registers.address_register)),
+            bold(&format!("{:03}", self.registers.accumulator))
+        );
+    }
+
+    fn print_ram(&self) {
+        let columns = 10;
+        for (i, &cell) in self.ram.iter().enumerate() {
+            if cell == 0 {
+                // Print in gray
+                print!("{} ", color_gray("000"));
+            } else {
+                print!("{:#03} ", cell);
+            }
+
+            if (i + 1) % columns == 0 {
+                println!();
+            }
+        }
+    }
+
+    fn run(&mut self) {
+        let mut should_continue = true;
+        while should_continue {
+            if self.config.print_computer_state {
+                println!();
+                self.print_registers();
+                self.output.print_on_one_line();
+                self.print_ram();
+            }
+            should_continue = self.clock_cycle();
+        }
+    }
+}
+
 const BOLD: &str = "\x1b[1m";
 const GRAY: &str = "\x1b[90m";
 const RED: &str = "\x1b[31m";
@@ -107,32 +303,6 @@ fn bold(text: &str) -> String {
 
 pub fn print_error(error: &str) {
     eprintln!("{}", color_red(error));
-}
-
-fn print_ram(ram: &RAM) {
-    let columns = 10;
-    for (i, &cell) in ram.iter().enumerate() {
-        if cell == 0 {
-            // Print in gray
-            print!("{} ", color_gray("000"));
-        } else {
-            print!("{:#03} ", cell);
-        }
-
-        if (i + 1) % columns == 0 {
-            println!();
-        }
-    }
-}
-
-fn print_registers(registers: &Registers) {
-    println!(
-        "PC: {}, Instruction: {}, Addr: {}, Acc: {}",
-        bold(&format!("{:02}", registers.program_counter)),
-        bold(&format!("{:01}", registers.instruction_register)),
-        bold(&format!("{:02}", registers.address_register)),
-        bold(&format!("{:03}", registers.accumulator))
-    );
 }
 
 enum ReadInputError {
@@ -188,124 +358,6 @@ fn apply_overflow(integer: &mut i16) {
     }
 }
 
-fn execute_instruction(
-    ram: &mut RAM,
-    registers: &mut Registers,
-    output: &mut Output,
-    config: &Config,
-) -> bool {
-    match registers.instruction_register {
-        0 => {
-            // HLT - Stop (Little Man has a rest)
-            println!("\n{}", bold("Halted!"));
-            return false;
-        }
-        1 => {
-            // ADD - Add the contents of the memory address to the Accumulator
-            registers.accumulator += ram[registers.address_register];
-            apply_overflow(&mut registers.accumulator);
-        }
-        2 => {
-            // SUB - Subtract the contents of the memory address from the Accumulator
-            registers.accumulator -= ram[registers.address_register];
-            apply_overflow(&mut registers.accumulator);
-        }
-        3 => {
-            // STA or STO - Store the value in the Accumulator in the memory address given
-            ram[registers.address_register] = registers.accumulator;
-        }
-        4 => {
-            // This code is unused and gives an error
-            panic!("Opcode 4 is not allowed!");
-        }
-        5 => {
-            // LDA - Load the Accumulator with the contents of the memory address given
-            registers.accumulator = ram[registers.address_register];
-        }
-        6 => {
-            // BRA - Branch - use the address given as the address of the next instruction
-            registers.program_counter = registers.address_register;
-            if config.print_computer_state {
-                println!("BRA: Jumping to address {}", registers.program_counter)
-            }
-        }
-        7 => {
-            // BRZ - Branch to the address given if the Accumulator is zero
-            if registers.accumulator == 0 {
-                registers.program_counter = registers.address_register;
-                if config.print_computer_state {
-                    println!("BRZ: Jumping to address {}", registers.program_counter)
-                }
-            }
-        }
-        8 => {
-            // BRP - Branch to the address given if the Accumulator is zero or positive
-            if registers.accumulator >= 0 {
-                registers.program_counter = registers.address_register;
-            }
-        }
-        9 => {
-            if registers.address_register == 1 {
-                // INP - Take from Input
-                let prompt = format!("INP: Number input: {}", BOLD);
-                let input_provided = read_input_until_valid(&prompt).unwrap_or_else(|_| 0);
-                registers.accumulator = input_provided;
-            }
-            if registers.address_register == 2 {
-                // OUT - Copy to Output
-                output.push_int(registers.accumulator);
-            }
-            if registers.address_register == 22 {
-                // OTC - Output accumulator as a character (Non-standard instruction)
-                let character = registers.accumulator as u8 as char;
-                output.push_char(character);
-            }
-        }
-        _ => {
-            panic!("Unhandled opcode: {}", registers.instruction_register);
-        }
-    }
-    true
-}
-
-fn clock_cycle(
-    ram: &mut RAM,
-    registers: &mut Registers,
-    output: &mut Output,
-    config: &Config,
-) -> bool {
-    // Stage 1: Fetch
-    let ram_index = registers.program_counter;
-    registers.program_counter += 1;
-
-    // Stage 2: Decode
-    let instruction = ram[ram_index];
-    let instruction_code = instruction / 100;
-    let instruction_address = instruction % 100;
-    registers.instruction_register = instruction_code;
-    registers.address_register = instruction_address as usize;
-
-    // Stage 3: Execute
-    execute_instruction(ram, registers, output, config)
-}
-
-fn load_data_to_ram(ram: &mut RAM, data_bytes: Vec<u8>) {
-    let mut touched_addresses = 0;
-    for (i, &byte) in data_bytes.iter().enumerate() {
-        if i >= ram.len() * 2 {
-            break;
-        }
-        let target_address = i / 2;
-        if i % 2 == 0 {
-            ram[target_address] = (byte as i16) << 8;
-            touched_addresses += 1;
-        } else {
-            ram[target_address] += byte as i16;
-        }
-    }
-    println!("Loaded data into {} RAM addresses", touched_addresses);
-}
-
 pub struct Config {
     pub load_ram_file_path: Option<PathBuf>,
     /// If the register values, output buffer, RAM values, and branch messages should be printed after every clock cycle
@@ -349,41 +401,9 @@ pub struct Args {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    // Array of 100 i16 ints
-    let mut ram: RAM = [0; 100];
-    // Let's get some registers initialised too
-    let mut registers = Registers {
-        program_counter: 0,
-        instruction_register: 0,
-        address_register: 0,
-        accumulator: 0,
-    };
-    let mut output = Output::new(OutputConfig {
-        immediately_print_output: config.print_raw_output,
-    });
-
-    // If a memory dump (.bin file) has been provided, load it into RAM
-    match config.load_ram_file_path {
-        Some(ref file_path) => {
-            let data = fs::read(file_path)?;
-            load_data_to_ram(&mut ram, data);
-        }
-        None => {
-            println!("Initial RAM (.bin) file not provided. RAM will be empty.");
-        }
-    }
-
-    let mut should_continue = true;
-    while should_continue {
-        if config.print_computer_state {
-            println!();
-            print_registers(&registers);
-            output.print_on_one_line();
-            print_ram(&ram);
-        }
-        should_continue = clock_cycle(&mut ram, &mut registers, &mut output, &config);
-    }
-
+    let mut computer = Computer::new(config);
+    computer.initialize_ram_from_file()?;
+    computer.run();
     Ok(())
 }
 
