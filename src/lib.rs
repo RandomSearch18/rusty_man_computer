@@ -167,12 +167,24 @@ impl Computer {
         self.execute_instruction()
     }
 
+    fn get_input(&mut self) -> i16 {
+        match &mut self.config.input {
+            Some(input) => {
+                if input.is_empty() {
+                    panic!("No more input values available");
+                }
+                input.remove(0)
+            }
+            None => {
+                let prompt = format!("INP: Number input: {}", BOLD);
+                read_input_until_valid(&prompt).unwrap_or_else(|_| 0)
+            }
+        }
+    }
+
     /// Returns `false` if the computer should halt, and `true` otherwise
     fn execute_instruction(&mut self) -> bool {
-        let reg = &mut self.registers;
-        let ram = &mut self.ram;
-        let output = &mut self.output;
-        match reg.instruction_register {
+        match self.registers.instruction_register {
             0 => {
                 // HLT - Stop (Little Man has a rest)
                 println!("\n{}", bold("Halted!"));
@@ -180,17 +192,17 @@ impl Computer {
             }
             1 => {
                 // ADD - Add the contents of the memory address to the Accumulator
-                reg.accumulator += ram[reg.address_register];
-                apply_overflow(&mut reg.accumulator);
+                self.registers.accumulator += self.ram[self.registers.address_register];
+                apply_overflow(&mut self.registers.accumulator);
             }
             2 => {
                 // SUB - Subtract the contents of the memory address from the Accumulator
-                reg.accumulator -= ram[reg.address_register];
-                apply_overflow(&mut reg.accumulator);
+                self.registers.accumulator -= self.ram[self.registers.address_register];
+                apply_overflow(&mut self.registers.accumulator);
             }
             3 => {
                 // STA or STO - Store the value in the Accumulator in the memory address given
-                ram[reg.address_register] = reg.accumulator;
+                self.ram[self.registers.address_register] = self.registers.accumulator;
             }
             4 => {
                 // This code is unused and gives an error
@@ -198,49 +210,47 @@ impl Computer {
             }
             5 => {
                 // LDA - Load the Accumulator with the contents of the memory address given
-                reg.accumulator = ram[reg.address_register];
+                self.registers.accumulator = self.ram[self.registers.address_register];
             }
             6 => {
                 // BRA - Branch - use the address given as the address of the next instruction
-                reg.program_counter = reg.address_register;
+                self.registers.program_counter = self.registers.address_register;
                 if self.config.print_computer_state {
-                    println!("BRA: Jumping to address {}", reg.program_counter)
+                    println!("BRA: Jumping to address {}", self.registers.program_counter)
                 }
             }
             7 => {
                 // BRZ - Branch to the address given if the Accumulator is zero
-                if reg.accumulator == 0 {
-                    reg.program_counter = reg.address_register;
+                if self.registers.accumulator == 0 {
+                    self.registers.program_counter = self.registers.address_register;
                     if self.config.print_computer_state {
-                        println!("BRZ: Jumping to address {}", reg.program_counter)
+                        println!("BRZ: Jumping to address {}", self.registers.program_counter)
                     }
                 }
             }
             8 => {
                 // BRP - Branch to the address given if the Accumulator is zero or positive
-                if reg.accumulator >= 0 {
-                    reg.program_counter = reg.address_register;
+                if self.registers.accumulator >= 0 {
+                    self.registers.program_counter = self.registers.address_register;
                 }
             }
             9 => {
-                if reg.address_register == 1 {
+                if self.registers.address_register == 1 {
                     // INP - Take from Input
-                    let prompt = format!("INP: Number input: {}", BOLD);
-                    let input_provided = read_input_until_valid(&prompt).unwrap_or_else(|_| 0);
-                    reg.accumulator = input_provided;
+                    self.registers.accumulator = self.get_input();
                 }
-                if reg.address_register == 2 {
+                if self.registers.address_register == 2 {
                     // OUT - Copy to Output
-                    output.push_int(reg.accumulator);
+                    self.output.push_int(self.registers.accumulator);
                 }
-                if reg.address_register == 22 {
-                    // OTC - Output accumulator as a character (Non-standard instruction)
-                    let character = reg.accumulator as u8 as char;
-                    output.push_char(character);
+                if self.registers.address_register == 22 {
+                    // OTC - self. accumulator as a character (Non-standard instruction)
+                    let character = self.registers.accumulator as u8 as char;
+                    self.output.push_char(character);
                 }
             }
             _ => {
-                panic!("Unhandled opcode: {}", reg.instruction_register);
+                panic!("Unhandled opcode: {}", self.registers.instruction_register);
             }
         }
         true
@@ -368,6 +378,12 @@ pub struct Config {
     pub print_computer_state: bool,
     /// If output should be directly and immediately printed when a OUT/OTC instruction is executed
     pub print_raw_output: bool,
+    /// Allows specifying input to be given to the emulator programmatically, instead of interactively in the terminal.
+    /// You must specify the entire input ahead-of-time.
+    /// It is formatted as a vector of integers. Each time the INP instruction is called, the next integer in the vector is used.
+    /// Panics if the INP instruction is called after all values have been used.
+    /// This feature is most useful when writing tests.
+    pub input: Option<Vec<i16>>,
 }
 
 impl Config {
@@ -386,6 +402,7 @@ impl Config {
             }),
             print_computer_state: !args.output_only,
             print_raw_output: args.output_only,
+            input: None,
         }
     }
 }
