@@ -386,3 +386,50 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn output_basic_line_wrapping() {
+        let mut output = Output::new(OutputConfig {
+            immediately_print_output: false,
+        });
+        output.push_char('a');
+        output.push_char('b');
+        output.push_char('c');
+        output.push_char('d');
+        output.push_char('e');
+        let lines = output.split_into_lines(4);
+        assert_eq!(lines, vec!["abcd", "e"]);
+    }
+
+    #[test]
+    fn output_numbers_on_separate_lines() {
+        let mut output = Output::new(OutputConfig {
+            immediately_print_output: false,
+        });
+        output.push_int(1);
+        output.push_int(2);
+        output.push_int(3);
+        let lines = output.split_into_lines(4);
+        assert_eq!(lines, vec!["1", "2", "3"]);
+    }
+
+    #[test]
+    fn output_mixed_numbers_and_characters() {
+        let mut output = Output::new(OutputConfig {
+            immediately_print_output: false,
+        });
+        // Part of an ASCII table
+        output.push_int(33);
+        output.push_char(' ');
+        output.push_char('!');
+        output.push_int(34);
+        output.push_char(' ');
+        output.push_char('"');
+        let lines = output.split_into_lines(4);
+        assert_eq!(lines, vec!["33 !", "34 \""]);
+    }
+}
