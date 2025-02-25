@@ -1,5 +1,7 @@
 # Rusty-Man Computer
 
+[![Build and test program](https://github.com/RandomSearch18/rusty_man_computer/actions/workflows/build.yml/badge.svg)](https://github.com/RandomSearch18/rusty_man_computer/actions/workflows/build.yml)
+
 This project is an emulator for Little Man Computer ([official help page](https://peterhigginson.co.uk/lmc/help_new.html), [Wikipedia](https://en.wikipedia.org/wiki/Little_man_computer)), written in Rust.
 
 It contains two tools:
