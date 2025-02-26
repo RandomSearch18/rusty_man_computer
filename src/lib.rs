@@ -1,120 +1,122 @@
 use clap::Parser;
-use std::{
-    error::Error,
-    fmt, fs,
-    io::Write,
-    ops::{AddAssign, SubAssign},
-    path::PathBuf,
-};
+use std::{error::Error, fs, io::Write, path::PathBuf};
+use value::Value;
 
-/// Represents a value held by one letterbox (memory cell) in the LMC
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Value(i16);
+mod value {
+    use std::{
+        fmt,
+        ops::{AddAssign, SubAssign},
+    };
 
-impl Value {
-    pub const MIN: i16 = -999;
-    pub const MAX: i16 = 999;
+    /// Represents a value held by one letterbox (memory cell) in the LMC
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    pub struct Value(i16);
 
-    pub fn new(value: i16) -> Result<Value, ()> {
-        if value < -999 || value > 999 {
-            Err(())
-        } else {
-            Ok(Value(value))
+    impl Value {
+        pub const MIN: i16 = -999;
+        pub const MAX: i16 = 999;
+
+        pub fn new(value: i16) -> Result<Value, ()> {
+            if value < -999 || value > 999 {
+                Err(())
+            } else {
+                Ok(Value(value))
+            }
+        }
+
+        /// Creates a new `Value` from an `i16`, wrapping around if the value is out of bounds.
+        /// This is useful for handling overflow when adding or subtracting values.
+        pub fn wrap_overflow(value: i16) -> Value {
+            let positive_overflow = value - Self::MAX;
+            if positive_overflow > 0 {
+                return Value::new((Self::MIN - 1) + positive_overflow)
+                    .expect("Out of bounds after overflow handling");
+            };
+            let negative_overflow = value + Self::MAX;
+            if negative_overflow < 0 {
+                return Value::new((Self::MAX + 1) - negative_overflow)
+                    .expect("Out of bounds after overflow handling");
+            };
+            Value::new(value).expect("Out of bounds after overflow handling")
+        }
+
+        pub fn zero() -> Value {
+            Value::new(0).expect("Failed to create zero value")
+        }
+
+        pub fn first_digit(&self) -> i16 {
+            self.0 / 100
+        }
+
+        pub fn last_two_digits(&self) -> i16 {
+            self.0 % 100
+        }
+
+        pub fn is_zero(&self) -> bool {
+            self.0 == 0
+        }
+
+        pub fn is_negative(&self) -> bool {
+            self.0 < 0
+        }
+
+        pub fn is_positive(&self) -> bool {
+            self.0 > 0
+        }
+
+        pub fn is_non_negative(&self) -> bool {
+            self.0 >= 0
+        }
+
+        pub fn to_string(&self) -> String {
+            self.0.to_string()
         }
     }
 
-    /// Creates a new `Value` from an `i16`, wrapping around if the value is out of bounds.
-    /// This is useful for handling overflow when adding or subtracting values.
-    pub fn wrap_overflow(value: i16) -> Value {
-        let positive_overflow = value - Self::MAX;
-        if positive_overflow > 0 {
-            return Value::new((Self::MIN - 1) + positive_overflow)
-                .expect("Out of bounds after overflow handling");
-        };
-        let negative_overflow = value + Self::MAX;
-        if negative_overflow < 0 {
-            return Value::new((Self::MAX + 1) - negative_overflow)
-                .expect("Out of bounds after overflow handling");
-        };
-        Value::new(value).expect("Out of bounds after overflow handling")
+    impl From<Value> for i16 {
+        fn from(value: Value) -> i16 {
+            value.0
+        }
     }
 
-    pub fn zero() -> Value {
-        Value::new(0).expect("Failed to create zero value")
+    impl From<Value> for char {
+        fn from(value: Value) -> char {
+            value.0 as u8 as char
+        }
     }
 
-    pub fn first_digit(&self) -> i16 {
-        self.0 / 100
+    impl From<i8> for Value {
+        fn from(value: i8) -> Value {
+            // This is fine because any i8 value will be within -999 to 999
+            Value(value as i16)
+        }
     }
 
-    pub fn last_two_digits(&self) -> i16 {
-        self.0 % 100
+    impl TryFrom<i16> for Value {
+        type Error = &'static str;
+
+        fn try_from(value: i16) -> Result<Self, Self::Error> {
+            Value::new(value).or(Err("Value out of range"))
+        }
     }
 
-    pub fn is_zero(&self) -> bool {
-        self.0 == 0
+    impl AddAssign for Value {
+        fn add_assign(&mut self, other: Value) {
+            *self = Value::wrap_overflow(self.0 + other.0);
+        }
     }
 
-    pub fn is_negative(&self) -> bool {
-        self.0 < 0
+    impl SubAssign for Value {
+        fn sub_assign(&mut self, other: Value) {
+            *self = Value::wrap_overflow(self.0 - other.0);
+        }
     }
 
-    pub fn is_positive(&self) -> bool {
-        self.0 > 0
-    }
-
-    pub fn is_non_negative(&self) -> bool {
-        self.0 >= 0
-    }
-
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-}
-
-impl From<Value> for i16 {
-    fn from(value: Value) -> i16 {
-        value.0
-    }
-}
-
-impl From<Value> for char {
-    fn from(value: Value) -> char {
-        value.0 as u8 as char
-    }
-}
-
-impl From<i8> for Value {
-    fn from(value: i8) -> Value {
-        // This is fine because any i8 value will be within -999 to 999
-        Value(value as i16)
-    }
-}
-
-impl TryFrom<i16> for Value {
-    type Error = &'static str;
-
-    fn try_from(value: i16) -> Result<Self, Self::Error> {
-        Value::new(value).or(Err("Value out of range"))
-    }
-}
-
-impl AddAssign for Value {
-    fn add_assign(&mut self, other: Value) {
-        *self = Value::wrap_overflow(self.0 + other.0);
-    }
-}
-
-impl SubAssign for Value {
-    fn sub_assign(&mut self, other: Value) {
-        *self = Value::wrap_overflow(self.0 - other.0);
-    }
-}
-
-// Thank you to https://stackoverflow.com/a/77841395/11519302 for showing me how to do this
-impl fmt::Display for Value {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(formatter)
+    // Thank you to https://stackoverflow.com/a/77841395/11519302 for showing me how to do this
+    impl fmt::Display for Value {
+        fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0.fmt(formatter)
+        }
     }
 }
 
