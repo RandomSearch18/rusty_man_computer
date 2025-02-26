@@ -30,7 +30,7 @@ fn test_add_program() {
         load_ram_file_path: Some(PathBuf::from("demos/add.bin")),
         print_computer_state: false,
         print_raw_output: false,
-        input: Some(vec![number_1, number_2]),
+        input: Some(vec![number_1.into(), number_2.into()]),
     });
     computer
         .initialize_ram_from_file()
@@ -50,7 +50,7 @@ fn test_add_subtract_program() {
         load_ram_file_path: Some(PathBuf::from("demos/add-subtract.bin")),
         print_computer_state: false,
         print_raw_output: false,
-        input: Some(vec![number_1, number_2, number_3]),
+        input: Some(vec![number_1.into(), number_2.into(), number_3.into()]),
     });
     computer
         .initialize_ram_from_file()
