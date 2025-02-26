@@ -1,7 +1,124 @@
 use clap::Parser;
-use std::{error::Error, fs, io::Write, path::PathBuf};
+use std::{
+    error::Error,
+    fmt, fs,
+    io::Write,
+    ops::{AddAssign, SubAssign},
+    path::PathBuf,
+};
 
-type RAM = [i16; 100];
+/// Represents a value held by one letterbox (memory cell) in the LMC
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Value(i16);
+
+impl Value {
+    pub const MIN: i16 = -999;
+    pub const MAX: i16 = 999;
+
+    pub fn new(value: i16) -> Result<Value, ()> {
+        if value < -999 || value > 999 {
+            Err(())
+        } else {
+            Ok(Value(value))
+        }
+    }
+
+    /// Creates a new `Value` from an `i16`, wrapping around if the value is out of bounds.
+    /// This is useful for handling overflow when adding or subtracting values.
+    pub fn wrap_overflow(value: i16) -> Value {
+        let positive_overflow = value - Self::MAX;
+        if positive_overflow > 0 {
+            return Value::new((Self::MIN - 1) + positive_overflow)
+                .expect("Out of bounds after overflow handling");
+        };
+        let negative_overflow = value + Self::MAX;
+        if negative_overflow < 0 {
+            return Value::new((Self::MAX + 1) - negative_overflow)
+                .expect("Out of bounds after overflow handling");
+        };
+        Value::new(value).expect("Out of bounds after overflow handling")
+    }
+
+    pub fn zero() -> Value {
+        Value::new(0).expect("Failed to create zero value")
+    }
+
+    pub fn first_digit(&self) -> i16 {
+        self.0 / 100
+    }
+
+    pub fn last_two_digits(&self) -> i16 {
+        self.0 % 100
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.0 == 0
+    }
+
+    pub fn is_negative(&self) -> bool {
+        self.0 < 0
+    }
+
+    pub fn is_positive(&self) -> bool {
+        self.0 > 0
+    }
+
+    pub fn is_non_negative(&self) -> bool {
+        self.0 >= 0
+    }
+
+    pub fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
+impl From<Value> for i16 {
+    fn from(value: Value) -> i16 {
+        value.0
+    }
+}
+
+impl From<Value> for char {
+    fn from(value: Value) -> char {
+        value.0 as u8 as char
+    }
+}
+
+impl From<i8> for Value {
+    fn from(value: i8) -> Value {
+        // This is fine because any i8 value will be within -999 to 999
+        Value(value as i16)
+    }
+}
+
+impl TryFrom<i16> for Value {
+    type Error = &'static str;
+
+    fn try_from(value: i16) -> Result<Self, Self::Error> {
+        Value::new(value).or(Err("Value out of range"))
+    }
+}
+
+impl AddAssign for Value {
+    fn add_assign(&mut self, other: Value) {
+        *self = Value::wrap_overflow(self.0 + other.0);
+    }
+}
+
+impl SubAssign for Value {
+    fn sub_assign(&mut self, other: Value) {
+        *self = Value::wrap_overflow(self.0 - other.0);
+    }
+}
+
+// Thank you to https://stackoverflow.com/a/77841395/11519302 for showing me how to do this
+impl fmt::Display for Value {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(formatter)
+    }
+}
+
+type RAM = [Value; 100];
 
 struct OutputConfig {
     immediately_print_output: bool,
@@ -27,16 +144,16 @@ impl Output {
         }
     }
 
-    fn push_int(&mut self, integer: i16) {
+    fn push_int(&mut self, integer: Value) {
         // If two numbers are printed in a row, separate them with an newline
         // This seems to be what the online LMC simulator does
         let last_digit_was_number = self.chars().last().unwrap_or(' ').is_numeric();
         if last_digit_was_number {
             self.push_char('\n');
         }
-        self.buffer.push_str(format!("{}", integer).as_str());
+        self.buffer.push_str(&integer.to_string());
         if self.config.immediately_print_output {
-            print!("{}", integer);
+            print!("{}", integer.to_string());
         }
     }
 
@@ -85,9 +202,9 @@ impl Output {
 
 struct Registers {
     program_counter: usize,
-    instruction_register: i16,
+    instruction_register: i8,
     address_register: usize,
-    accumulator: i16,
+    accumulator: Value,
 }
 
 pub struct Computer {
@@ -101,12 +218,12 @@ pub struct Computer {
 impl Computer {
     pub fn new(config: Config) -> Computer {
         Computer {
-            ram: [0; 100],
+            ram: [Value::zero(); 100],
             registers: Registers {
                 program_counter: 0,
                 instruction_register: 0,
                 address_register: 0,
-                accumulator: 0,
+                accumulator: Value::zero(),
             },
             output: Output::new(OutputConfig {
                 immediately_print_output: config.print_raw_output,
@@ -142,10 +259,10 @@ impl Computer {
             }
             let target_address = i / 2;
             if i % 2 == 0 {
-                self.ram[target_address] = (byte as i16) << 8;
+                self.ram[target_address] = Value::new((byte as i16) << 8).unwrap();
                 touched_addresses += 1;
             } else {
-                self.ram[target_address] += byte as i16;
+                self.ram[target_address] += Value::new(byte as i16).unwrap();
             }
         }
         touched_addresses
@@ -158,16 +275,17 @@ impl Computer {
 
         // Stage 2: Decode
         let instruction = self.ram[ram_index];
-        let instruction_code = instruction / 100;
-        let instruction_address = instruction % 100;
-        self.registers.instruction_register = instruction_code;
+        let instruction_code = instruction.first_digit();
+        let instruction_address = instruction.last_two_digits();
+        self.registers.instruction_register =
+            instruction_code.try_into().expect("Opcode out of range");
         self.registers.address_register = instruction_address as usize;
 
         // Stage 3: Execute
         self.execute_instruction()
     }
 
-    fn get_input(&mut self) -> i16 {
+    fn get_input(&mut self) -> Value {
         match &mut self.config.input {
             Some(input) => {
                 if input.is_empty() {
@@ -177,7 +295,7 @@ impl Computer {
             }
             None => {
                 let prompt = format!("INP: Number input: {}", BOLD);
-                read_input_until_valid(&prompt).unwrap_or_else(|_| 0)
+                read_input_until_valid(&prompt).unwrap_or_else(|_| Value::zero())
             }
         }
     }
@@ -193,12 +311,10 @@ impl Computer {
             1 => {
                 // ADD - Add the contents of the memory address to the Accumulator
                 self.registers.accumulator += self.ram[self.registers.address_register];
-                apply_overflow(&mut self.registers.accumulator);
             }
             2 => {
                 // SUB - Subtract the contents of the memory address from the Accumulator
                 self.registers.accumulator -= self.ram[self.registers.address_register];
-                apply_overflow(&mut self.registers.accumulator);
             }
             3 => {
                 // STA or STO - Store the value in the Accumulator in the memory address given
@@ -221,7 +337,7 @@ impl Computer {
             }
             7 => {
                 // BRZ - Branch to the address given if the Accumulator is zero
-                if self.registers.accumulator == 0 {
+                if self.registers.accumulator.is_zero() {
                     self.registers.program_counter = self.registers.address_register;
                     if self.config.print_computer_state {
                         println!("BRZ: Jumping to address {}", self.registers.program_counter)
@@ -230,7 +346,7 @@ impl Computer {
             }
             8 => {
                 // BRP - Branch to the address given if the Accumulator is zero or positive
-                if self.registers.accumulator >= 0 {
+                if self.registers.accumulator.is_non_negative() {
                     self.registers.program_counter = self.registers.address_register;
                 }
             }
@@ -245,7 +361,7 @@ impl Computer {
                 }
                 if self.registers.address_register == 22 {
                     // OTC - self. accumulator as a character (Non-standard instruction)
-                    let character = self.registers.accumulator as u8 as char;
+                    let character = self.registers.accumulator.into();
                     self.output.push_char(character);
                 }
             }
@@ -269,7 +385,7 @@ impl Computer {
     fn print_ram(&self) {
         let columns = 10;
         for (i, &cell) in self.ram.iter().enumerate() {
-            if cell == 0 {
+            if cell.is_zero() {
                 // Print in gray
                 print!("{} ", color_gray("000"));
             } else {
@@ -324,18 +440,17 @@ enum ReadInputError {
     Validation,
 }
 
-fn read_input() -> Result<i16, ReadInputError> {
+fn read_input() -> Result<Value, ReadInputError> {
     let mut input = String::new();
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => match input.trim().parse() {
-            Ok(num) => {
-                if num >= -999 && num <= 999 {
-                    return Ok(num);
-                } else {
+            Ok(num) => match Value::new(num) {
+                Ok(value) => return Ok(value),
+                Err(_) => {
                     print_error("Please input an integer between -999 and 999");
                     return Err(ReadInputError::Validation);
                 }
-            }
+            },
             Err(_) => {
                 print_error("Please input a valid integer between -999 and 999");
                 return Err(ReadInputError::Validation);
@@ -348,7 +463,7 @@ fn read_input() -> Result<i16, ReadInputError> {
     }
 }
 
-fn read_input_until_valid(prompt: &str) -> Result<i16, ()> {
+fn read_input_until_valid(prompt: &str) -> Result<Value, ()> {
     loop {
         print!("{}", prompt);
         std::io::stdout().flush().unwrap_or(());
@@ -358,17 +473,6 @@ fn read_input_until_valid(prompt: &str) -> Result<i16, ()> {
             Err(ReadInputError::Unrecoverable(_)) => return Err(()),
             Err(ReadInputError::Validation) => continue,
         }
-    }
-}
-
-fn apply_overflow(integer: &mut i16) {
-    let positive_overflow = *integer - 999;
-    if positive_overflow > 0 {
-        *integer = -1000 + positive_overflow;
-    }
-    let negative_overflow = *integer + 999;
-    if negative_overflow < 0 {
-        *integer = 1000 + negative_overflow;
     }
 }
 
@@ -383,7 +487,7 @@ pub struct Config {
     /// It is formatted as a vector of integers. Each time the INP instruction is called, the next integer in the vector is used.
     /// Panics if the INP instruction is called after all values have been used.
     /// This feature is most useful when writing tests.
-    pub input: Option<Vec<i16>>,
+    pub input: Option<Vec<Value>>,
 }
 
 impl Config {
@@ -451,9 +555,9 @@ mod tests {
         let mut output = Output::new(OutputConfig {
             immediately_print_output: false,
         });
-        output.push_int(1);
-        output.push_int(2);
-        output.push_int(3);
+        output.push_int(Value::from(1));
+        output.push_int(Value::from(2));
+        output.push_int(Value::from(3));
         let lines = output.split_into_lines(4);
         assert_eq!(lines, vec!["1", "2", "3"]);
     }
@@ -464,10 +568,10 @@ mod tests {
             immediately_print_output: false,
         });
         // Part of an ASCII table
-        output.push_int(33);
+        output.push_int(Value::from(33));
         output.push_char(' ');
         output.push_char('!');
-        output.push_int(34);
+        output.push_int(Value::from(34));
         output.push_char(' ');
         output.push_char('"');
         let lines = output.split_into_lines(4);
