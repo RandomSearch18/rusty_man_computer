@@ -27,14 +27,17 @@ mod value {
         /// Creates a new `Value` from an `i16`, wrapping around if the value is out of bounds.
         /// This is useful for handling overflow when adding or subtracting values.
         pub fn wrap_overflow(value: i16) -> Value {
+            println!("Wrapping value: {}", value);
             let positive_overflow = value - Self::MAX;
+            println!("Positive overflow: {}", positive_overflow);
             if positive_overflow > 0 {
                 return Value::new((Self::MIN - 1) + positive_overflow)
                     .expect("Out of bounds after overflow handling");
             };
             let negative_overflow = value + Self::MAX;
+            println!("Negative overflow: {}", negative_overflow);
             if negative_overflow < 0 {
-                return Value::new((Self::MAX + 1) - negative_overflow)
+                return Value::new((Self::MAX + 1) + negative_overflow)
                     .expect("Out of bounds after overflow handling");
             };
             Value::new(value).expect("Out of bounds after overflow handling")
@@ -70,6 +73,12 @@ mod value {
 
         pub fn to_string(&self) -> String {
             self.0.to_string()
+        }
+    }
+
+    impl PartialEq<i16> for Value {
+        fn eq(&self, other: &i16) -> bool {
+            self.0 == *other
         }
     }
 
@@ -578,5 +587,77 @@ mod tests {
         output.push_char('"');
         let lines = output.split_into_lines(4);
         assert_eq!(lines, vec!["33 !", "34 \""]);
+    }
+
+    #[test]
+    fn value_works() {
+        // Normal data
+        Value::new(0).unwrap();
+        Value::new(901).unwrap();
+        Value::new(-10).unwrap();
+        // Boundary data
+        Value::new(999).unwrap();
+        Value::new(-999).unwrap();
+    }
+
+    #[test]
+    fn value_equality_check() {
+        // We like our zeroes here
+        assert!(Value::zero() == 0);
+        assert!(Value::new(0).unwrap() == 0);
+        assert!(Value::from(0) == Value::new(0).unwrap());
+        assert!(Value::zero().is_zero());
+        // Let's add in one normal number too
+        assert!(Value::new(21).unwrap() == 21);
+    }
+
+    #[test]
+    fn value_wraps_overflow() {
+        // Boundary data
+        let mut value = Value::new(999).unwrap();
+        value += Value::from(1);
+        assert_eq!(value, -999);
+    }
+
+    #[test]
+    fn value_wraps_underflow() {
+        // Boundary data
+        let mut value = Value::new(-999).unwrap();
+        value -= Value::from(1);
+        assert_eq!(value, 999);
+    }
+
+    #[test]
+    fn value_wraps() {
+        // "Normal" data (if we assume that wrapping is the normal behaviour)
+        let mut value = Value::new(990).unwrap();
+        value += Value::from(21);
+        // Checked against Peter Higginson's LMC simulator (wraps to -988)
+        assert_eq!(value, -988);
+    }
+
+    #[test]
+    fn value_to_string() {
+        assert_eq!(Value::from(3).to_string(), "3");
+        assert_eq!(Value::new(-123).unwrap().to_string(), "-123");
+    }
+
+    #[test]
+    fn value_disallows_invalid_values() {
+        // Boundary data
+        assert!(Value::new(1000).is_err());
+        assert!(Value::new(-1000).is_err());
+        // Invalid data
+        assert!(Value::new(2025).is_err());
+    }
+
+    #[test]
+    fn value_first_and_last_digits() {
+        // Testing the functions used to extract operators and operands from instructions
+        let instruction = Value::new(599).unwrap();
+        assert_eq!(instruction.first_digit(), 5);
+        assert_eq!(instruction.last_two_digits(), 99);
+        assert_eq!(Value::zero().first_digit(), 0);
+        assert_eq!(Value::zero().last_two_digits(), 0);
     }
 }
