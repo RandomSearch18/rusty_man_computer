@@ -59,3 +59,21 @@ fn test_add_subtract_program() {
     let expected_output = [expected_sum.to_string(), expected_difference.to_string()].join("\n");
     assert_eq!(computer.output.read_all(), expected_output);
 }
+
+#[test]
+fn test_factorial_program() {
+    let input = 6;
+    // 6! = 720
+    let expected_output = 720;
+    let mut computer = Computer::new(Config {
+        load_ram_file_path: Some(PathBuf::from("demos/factorial.bin")),
+        print_computer_state: false,
+        print_raw_output: false,
+        input: Some(vec![input.into()]),
+    });
+    computer
+        .initialize_ram_from_file()
+        .expect("Failed to initialize RAM from file");
+    computer.run();
+    assert_eq!(computer.output.read_all(), expected_output.to_string());
+}
