@@ -27,15 +27,12 @@ mod value {
         /// Creates a new `Value` from an `i16`, wrapping around if the value is out of bounds.
         /// This is useful for handling overflow when adding or subtracting values.
         pub fn wrap_overflow(value: i16) -> Value {
-            println!("Wrapping value: {}", value);
             let positive_overflow = value - Self::MAX;
-            println!("Positive overflow: {}", positive_overflow);
             if positive_overflow > 0 {
                 return Value::new((Self::MIN - 1) + positive_overflow)
                     .expect("Out of bounds after overflow handling");
             };
             let negative_overflow = value + Self::MAX;
-            println!("Negative overflow: {}", negative_overflow);
             if negative_overflow < 0 {
                 return Value::new((Self::MAX + 1) + negative_overflow)
                     .expect("Out of bounds after overflow handling");
