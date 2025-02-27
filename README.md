@@ -23,9 +23,9 @@ Each clock cycle, the contents of the registers are shown on the first line, the
 
 ### Running the demo programs
 
-The demo programs are taken from the online LMC simulator, so credit for them goes to Peter L Higginson.
-
 #### Addition
+
+Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
 
 > Output the sum of two numbers
 
@@ -34,6 +34,8 @@ cargo run --bin rusty_man_computer -- --ram demos/add.bin
 ```
 
 #### Addition and subtraction
+
+Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
 
 > Input three numbers.
 > Output the sum of the first two
@@ -45,14 +47,28 @@ cargo run --bin rusty_man_computer -- --ram demos/add-subtract.bin
 
 #### Basic ASCII characters
 
+Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
+
 ```bash
 cargo run --bin rusty_man_computer -- --ram demos/ascii.bin
 ```
 
 #### Basic ASCII character table
 
+Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
+
 ```bash
 cargo run --bin rusty_man_computer -- --ram demos/ascii_table.bin
+```
+
+#### Factorial
+
+Credit: 101computing.net, <https://www.101computing.net/LMC/>
+
+Computes the factorial of the given input number. Note that above $6!$, the output will be wrong due to 999 being the highest representable number.
+
+```bash
+cargo run --bin rusty_man_computer -- --ram demos/factorial.bin
 ```
 
 ### Running your own programs
