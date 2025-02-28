@@ -101,3 +101,14 @@ cargo run --bin rusty_man_computer -- --ram my_program.bin
 Rusty-Man Computer shows the whole state of the computer at the end of every clock cycle, including the contents of the registers, all memory values, the output, and if a branch instruction has been called. This verbose output should make it easy to see what the emulator is doing, and to track your code as it runs.
 
 The emulator aims to be 100% compatible with [the Peter Higginson implementation](https://peterhigginson.co.uk/lmc/help_new.html) (LMC v1.5b, as of February 2025). All instructions and behaviour present in v1.5 have been implemented, so programs should run exactly as they do on the online simulator.
+
+## Supported platforms
+
+Currently, I only build binaries for Linux (the `x86_64-unknown-linux-gnu` [Rust target](https://doc.rust-lang.org/nightly/rustc/platform-support.html)), but I plan to support and build for the following platforms:
+
+- x86_64 Linux (`x86_64-unknown-linux-gnu`)
+- x86_64 Windows (`x86_64-pc-windows-gnu`)
+- x86_64 macOS (`x86_64-apple-darwin`)
+- ARM64 Linux (`aarch64-unknown-linux-gnu`)
+
+If you have a different system, you will probably be able to build the program using the Rust compiler yourself, and it should work fine. If you have any issues, I'd be happy to try to help with compiling, or fix bugs, whatever system you're on.
