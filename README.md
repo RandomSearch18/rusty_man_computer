@@ -2,7 +2,7 @@
 
 [![Build and test program](https://github.com/RandomSearch18/rusty_man_computer/actions/workflows/build.yml/badge.svg)](https://github.com/RandomSearch18/rusty_man_computer/actions/workflows/build.yml)
 
-This project is an emulator for Little Man Computer ([official help page](https://peterhigginson.co.uk/lmc/help_new.html), [Wikipedia](https://en.wikipedia.org/wiki/Little_man_computer)), written in Rust.
+This project is an emulator for Little Man Computer (LMC) ([Wikipedia](https://en.wikipedia.org/wiki/Little_man_computer)), written in Rust. Its behaviour is based on [Peter Higginson's online LMC simulator](https://peterhigginson.co.uk/lmc/).
 
 It contains two tools:
 
@@ -100,4 +100,4 @@ cargo run --bin rusty_man_computer -- --ram my_program.bin
 
 Rusty-Man Computer shows the whole state of the computer at the end of every clock cycle, including the contents of the registers, all memory values, the output, and if a branch instruction has been called. This verbose output should make it easy to see what the emulator is doing, and to track your code as it runs.
 
-The emulator implements all LMC v1.5 instructions, so programs should run exactly as they do on the online simulator.
+The emulator aims to be 100% compatible with [the Peter Higginson implementation](https://peterhigginson.co.uk/lmc/help_new.html) (LMC v1.5b, as of February 2025). All instructions and behaviour present in v1.5 have been implemented, so programs should run exactly as they do on the online simulator.
