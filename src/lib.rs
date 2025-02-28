@@ -556,6 +556,57 @@ mod tests {
     use super::*;
 
     #[test]
+    fn hlt_instruction_works() {
+        let mut computer = Computer::new(Config::default());
+        computer.ram[0] = 000.into();
+        let has_halted = !computer.clock_cycle();
+        // It should halt after the first clock cycle
+        assert!(has_halted);
+    }
+
+    #[test]
+    fn add_instruction_works() {
+        // Test 40 + 2 = 42
+        let mut computer = Computer::new(Config::default());
+        computer.registers.accumulator = 40.into();
+        computer.ram[99] = 2.into(); // Operand
+        computer.ram[0] = Value::new(199).unwrap(); // Add address 99 to ACC
+        computer.clock_cycle();
+        assert_eq!(computer.registers.accumulator, 42);
+    }
+
+    #[test]
+    fn sub_instruction_works() {
+        // Test 42 - 2 = 40
+        let mut computer = Computer::new(Config::default());
+        computer.registers.accumulator = 42.into();
+        computer.ram[99] = 2.into(); // Operand
+        computer.ram[0] = Value::new(299).unwrap(); // Subtract address 99 from ACC
+        computer.clock_cycle();
+        assert_eq!(computer.registers.accumulator, 40);
+    }
+
+    #[test]
+    fn store_instruction_works() {
+        // Test storing 42 in address 99
+        let mut computer = Computer::new(Config::default());
+        computer.registers.accumulator = 42.into();
+        computer.ram[0] = Value::new(399).unwrap(); // Store ACC to address 99
+        computer.clock_cycle();
+        assert_eq!(computer.ram[99], 42);
+    }
+
+    #[test]
+    fn load_instruction_works() {
+        // Test loading 42 from address 99
+        let mut computer = Computer::new(Config::default());
+        computer.ram[99] = 42.into();
+        computer.ram[0] = Value::new(599).unwrap(); // Load ACC from address 99
+        computer.clock_cycle();
+        assert_eq!(computer.registers.accumulator, 42);
+    }
+
+    #[test]
     fn output_basic_line_wrapping() {
         let mut output = Output::new(OutputConfig {
             immediately_print_output: false,
