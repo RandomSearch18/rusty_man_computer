@@ -36,3 +36,11 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: "--locked --release"
           strip: true
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Rusty-Man Computer build for ${{ matrix.platform.os-name }}
+          path: |
+            ./target/${{ matrix.platform.target }}/release/rusty_man_computer*
+            ./target/${{ matrix.platform.target }}/release/bin_creator*
+          if-no-files-found: error
