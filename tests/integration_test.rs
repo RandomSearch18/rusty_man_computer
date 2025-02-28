@@ -6,9 +6,7 @@ use rusty_man_computer::{Computer, Config};
 fn test_ascii_program() {
     let mut computer = Computer::new(Config {
         load_ram_file_path: Some(PathBuf::from("demos/ascii.bin")),
-        print_computer_state: false,
-        print_raw_output: false,
-        input: None,
+        ..Config::default()
     });
     computer
         .initialize_ram_from_file()
@@ -28,9 +26,8 @@ fn test_add_program() {
     let expected_output = number_1 + number_2;
     let mut computer = Computer::new(Config {
         load_ram_file_path: Some(PathBuf::from("demos/add.bin")),
-        print_computer_state: false,
-        print_raw_output: false,
         input: Some(vec![number_1.into(), number_2.into()]),
+        ..Config::default()
     });
     computer
         .initialize_ram_from_file()
@@ -48,9 +45,8 @@ fn test_add_subtract_program() {
     let expected_difference = number_3 - number_1;
     let mut computer = Computer::new(Config {
         load_ram_file_path: Some(PathBuf::from("demos/add-subtract.bin")),
-        print_computer_state: false,
-        print_raw_output: false,
         input: Some(vec![number_1.into(), number_2.into(), number_3.into()]),
+        ..Config::default()
     });
     computer
         .initialize_ram_from_file()
@@ -67,9 +63,8 @@ fn test_factorial_program() {
     let expected_output = 720;
     let mut computer = Computer::new(Config {
         load_ram_file_path: Some(PathBuf::from("demos/factorial.bin")),
-        print_computer_state: false,
-        print_raw_output: false,
         input: Some(vec![input.into()]),
+        ..Config::default()
     });
     computer
         .initialize_ram_from_file()
