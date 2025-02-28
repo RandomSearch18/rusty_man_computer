@@ -519,6 +519,17 @@ impl Config {
     }
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            load_ram_file_path: None,
+            print_computer_state: true,
+            print_raw_output: false,
+            input: None,
+        }
+    }
+}
+
 #[derive(Parser)]
 #[command(version)]
 pub struct Args {
