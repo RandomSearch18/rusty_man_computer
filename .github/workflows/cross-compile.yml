@@ -39,8 +39,9 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Rusty-Man Computer build for ${{ matrix.platform.os-name }}
+          name: Rusty-Man Computer for ${{ matrix.platform.os-name }}
           path: |
             ./target/${{ matrix.platform.target }}/release/rusty_man_computer*
             ./target/${{ matrix.platform.target }}/release/bin_creator*
+            !**/*.d
           if-no-files-found: error
