@@ -22,9 +22,6 @@ jobs:
           - os-name: macOS x86_64
             runs-on: macOS-latest
             target: x86_64-apple-darwin
-
-          # more targets here ...
-
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
       - name: Checkout
