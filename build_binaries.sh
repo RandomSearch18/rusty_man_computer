@@ -12,8 +12,12 @@ targets=(
 
 version=$(cargo run --bin rusty_man_computer -- --version | cut -d ' ' -f 2)
 
+# Clear the `target/dist` directory
 mkdir -p target/dist
+rm target/dist/*
+
 for target in "${targets[@]}"; do
+    echo "Building for $target"
     cross build --release --target "$target"
     # Copy both binaries to `target/dist`
     cp "target/$target/release/rusty_man_computer" "target/dist/rusty-man-computer-$version-$target" || \
