@@ -22,6 +22,6 @@ for target in "${targets[@]}"; do
     # Copy both binaries to `target/dist`
     cp "target/$target/release/rusty_man_computer" "target/dist/rusty-man-computer-$version-$target" || \
         cp "target/$target/release/rusty_man_computer.exe" "target/dist/rusty-man-computer-$version-$target.exe"
-    cp "target/$target/release/bin_creator" "target/dist/bin_creator-$version-$target" || \
-        cp "target/$target/release/bin_creator.exe" "target/dist/bin_creator-$version-$target.exe"
+    cp "target/$target/release/bin_creator" "target/dist/bin-creator-$version-$target" || \
+        cp "target/$target/release/bin_creator.exe" "target/dist/bin-creator-$version-$target.exe"
 done
