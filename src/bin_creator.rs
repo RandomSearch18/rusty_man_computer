@@ -14,10 +14,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let filename = &args[1];
 
     // Let the user paste in a string
-    println!("Paste in the memory data:");
+    println!("Paste the memory data below, then press Enter twice to submit:");
     let mut line = String::new();
     let stdin = io::stdin();
-    stdin.lock().read_line(&mut line)?;
+    // Accept input until enter is pressed twice
+    loop {
+        stdin.lock().read_line(&mut line)?;
+        if line.chars().rev().take(2).collect::<String>() == "\n\n" {
+            break;
+        }
+    }
 
     // Split the string into a vector i16 signed ints
     let memory_data_items: Vec<i16> = line
@@ -34,5 +40,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Write the memory data to a binary file
     fs::write(filename, memory_data_bytes)?;
 
+    println!("Successfully created binary file: {}", filename);
     Ok(())
 }

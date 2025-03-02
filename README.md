@@ -75,13 +75,13 @@ cargo run --bin rusty_man_computer -- --ram demos/factorial.bin
 
 At the moment, the easiest way to write a program is using the assembly language in the [online simulator](https://peterhigginson.co.uk/lmc/). Write the assembly code, click "ASSEMBLE INTO RAM", and click-and-drag to copy the contents of the memory text boxes (you can leave out any empty memory at the end).
 
-At the moment, you have to use a text editor to ensure that each memory cell is only separated by a space, and not a line break. (This can also be accomplished by pasting the memory contents into the address bar of your browser, and copying it from there.)
-
 Then you can run `bin_creator`, giving it the file name that the binary file should be written to, e.g.
 
 ```bash
 cargo run --bin bin_creator -- my_program.bin
 ```
+
+Follow the prompt to paste the memory data into your terminal, and press Enter twice in a row to mark the end of the data.
 
 Then you can run the program as described above, e.g.
 
