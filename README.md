@@ -21,6 +21,16 @@ Each clock cycle, the contents of the registers are shown on the first line, the
 
 ## Usage
 
+### Pre-compiled binaries
+
+At the moment, `cargo run` is the recommended way to run the app, but pre-compiled binaries are also available for [some platforms](#supported-platforms). Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
+
+Then, you can directly run the binary, following the examples below, e.g.
+
+```sh
+rusty-man-computer --ram demos/add.bin
+```
+
 ### Running the demo programs
 
 #### Addition
@@ -104,11 +114,14 @@ The emulator aims to be 100% compatible with [the Peter Higginson implementation
 
 ## Supported platforms
 
-Currently, I only build binaries for Linux (the `x86_64-unknown-linux-gnu` [Rust target](https://doc.rust-lang.org/nightly/rustc/platform-support.html)), but I plan to support and build for the following platforms:
+Currently, I support and offer pre-compiled binaries for the following platforms:
 
 - x86_64 Linux (`x86_64-unknown-linux-gnu`)
 - x86_64 Windows (`x86_64-pc-windows-gnu`)
-- x86_64 macOS (`x86_64-apple-darwin`)
 - ARM64 Linux (`aarch64-unknown-linux-gnu`)
+
+I also plan to add pre-compiled binaries for macOS soon:
+
+- x86_64 macOS (`x86_64-apple-darwin`)
 
 If you have a different system, you will probably be able to build the program using the Rust compiler yourself, and it should work fine. If you have any issues, I'd be happy to try to help with compiling, or fix bugs, whatever system you're on.
