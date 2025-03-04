@@ -2,7 +2,7 @@ use clap::Parser;
 use std::{error::Error, fs, io::Write, path::PathBuf};
 use value::Value;
 
-mod value {
+pub mod value {
     use std::{
         fmt,
         ops::{AddAssign, SubAssign},
