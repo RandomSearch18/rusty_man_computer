@@ -64,18 +64,6 @@ fn assemble(program: &str) -> Vec<Value> {
     let parsed: Vec<Result<Line, ParseError>> = program
         .lines()
         .map(|line| {
-            // for char in line.chars() {
-            //     match state {
-            //         State::Unknown => {
-            //             if char.is_whitespace() {
-            //                 continue;
-            //             }
-            //             if char.is_alphabetic() {
-            //                 state = State::smth
-            //             }
-            //         }
-            //     }
-            // }
             let line = line.trim();
             if line.is_empty() || line.starts_with("//") {
                 return Ok(Line::Empty());
