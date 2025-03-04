@@ -1,5 +1,6 @@
 use rusty_man_computer::value::Value;
 
+#[derive(Debug)]
 enum Opcode {
     HLT,
     ADD,
@@ -15,11 +16,13 @@ enum Opcode {
     DAT,
 }
 
+#[derive(Debug)]
 enum Operand {
     Value(Value),
     Label(String),
 }
 
+#[derive(Debug)]
 enum Line {
     Empty(),
     Instruction {
@@ -29,6 +32,7 @@ enum Line {
     },
 }
 
+#[derive(Debug)]
 enum ParseError {
     InvalidOpcode(String),
     OperandOutOfRange(i16),
@@ -57,7 +61,6 @@ fn parse_opcode(string: &str) -> Option<Opcode> {
 }
 
 fn assemble(program: &str) -> Vec<Value> {
-    let mut state = State::Unknown;
     let parsed: Vec<Result<Line, ParseError>> = program
         .lines()
         .map(|line| {
@@ -127,7 +130,7 @@ fn assemble(program: &str) -> Vec<Value> {
             })
         })
         .collect();
-
+    println!("{:?}", parsed);
     vec![]
 }
 
