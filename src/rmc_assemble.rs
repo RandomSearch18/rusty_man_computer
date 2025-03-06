@@ -118,7 +118,10 @@ fn assemble(program: &str) -> Vec<Value> {
             })
         })
         .collect();
-    println!("{:?}", parsed);
+    for line in parsed {
+        let line = line.unwrap();
+        println!("{:?}", line);
+    }
     vec![]
 }
 
