@@ -118,7 +118,7 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
 
 fn assemble(program: &str) -> Result<Vec<Value>, ParseError> {
     let parsed = parse_assembly(program);
-    let valid_lines: Vec<Line> = Vec::new();
+    let mut valid_lines: Vec<Line> = Vec::new();
     // Only go forward with non-empty lines, and raise an error if we encounter an invalid line
     for line in parsed {
         match line {
@@ -130,11 +130,7 @@ fn assemble(program: &str) -> Result<Vec<Value>, ParseError> {
         }
     }
 
-    for line in parsed {
-        let line = line.unwrap();
-        println!("{:?}", line);
-    }
-    vec![]
+    Ok(vec![])
 }
 
 fn main() {
@@ -156,6 +152,9 @@ mod tests {
         OUT
         HLT
         ";
-        assert_eq!(assemble(program), vec![901, 399, 901, 199, 902, 000])
+        assert_eq!(
+            assemble(program).unwrap(),
+            vec![901, 399, 901, 199, 902, 000]
+        )
     }
 }
