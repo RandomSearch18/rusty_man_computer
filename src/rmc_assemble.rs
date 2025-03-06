@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use clap::Parser;
+use std::{collections::HashMap, path::PathBuf};
 
 use rusty_man_computer::value::Value;
 
@@ -201,8 +202,33 @@ fn assemble(program: &str) -> Result<Vec<Value>, AssemblerError> {
     }
 }
 
-fn main() {
-    println!("Rusty-Man Computer Assembler");
+#[derive(Parser)]
+#[command(version)]
+pub struct Args {
+    /// Path to the assembly program
+    program: PathBuf,
+    /// Path to a .bin file to save the assembled program to
+    output: Option<PathBuf>,
+}
+
+fn main() -> Result<(), String> {
+    let args = Args::parse();
+    let program = std::fs::read_to_string(args.program).expect("Failed to read program");
+    let assembler_result = assemble(&program);
+    match assembler_result {
+        Err(error) => match error {
+            AssemblerError::ParseError(parse_error) => {
+                return Err(format!("Parse error: {:?}", parse_error));
+            }
+            AssemblerError::MachineCodeError(message) => {
+                return Err(message.to_string());
+            }
+        },
+        Ok(machine_code) => {
+            println!("{:?}", machine_code);
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]
