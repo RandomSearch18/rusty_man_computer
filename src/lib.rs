@@ -5,7 +5,7 @@ use value::Value;
 pub mod value {
     use std::{
         fmt,
-        ops::{AddAssign, SubAssign},
+        ops::{AddAssign, RangeInclusive, SubAssign},
     };
 
     /// Represents a value held by one letterbox (memory cell) in the LMC
@@ -15,6 +15,7 @@ pub mod value {
     impl Value {
         pub const MIN: i16 = -999;
         pub const MAX: i16 = 999;
+        pub const RANGE: RangeInclusive<i16> = Self::MIN..=Self::MAX;
 
         pub fn new(value: i16) -> Result<Value, ()> {
             if value < -999 || value > 999 {
@@ -42,6 +43,16 @@ pub mod value {
 
         pub fn zero() -> Value {
             Value::new(0).expect("Failed to create zero value")
+        }
+
+        pub fn from_digits(first_digit: i16, last_two_digits: i16) -> Result<Value, &'static str> {
+            if !(0..=9).contains(&first_digit) {
+                return Err("First digit out of range");
+            }
+            if !(0..=99).contains(&last_two_digits) {
+                return Err("Last two digits out of range");
+            }
+            Value::new(first_digit * 100 + last_two_digits).or(Err("Value out of range"))
         }
 
         pub fn first_digit(&self) -> i16 {

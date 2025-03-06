@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use rusty_man_computer::value::Value;
 
 #[derive(Debug)]
@@ -114,6 +116,63 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
             })
         })
         .collect()
+}
+
+fn generate_label_table(lines: &Vec<Line>) -> HashMap<String, usize> {
+    let mut labels: HashMap<String, usize> = HashMap::new();
+    for (index, line) in lines.iter().enumerate() {
+        match line {
+            Line::Instruction { label, .. } => {
+                if let Some(label) = label {
+                    labels.insert(label.to_string(), index);
+                }
+            }
+            _ => continue,
+        }
+    }
+    labels
+}
+
+fn generate_machine_code(lines: Vec<Line>) -> Result<Vec<Value>, &'static str> {
+    let mut output: Vec<Value> = Vec::new();
+    let labels = generate_label_table(&lines);
+    for line in lines {
+        match line {
+            Line::Instruction {
+                opcode, operand, ..
+            } => {
+                let operand_num: i16 = match operand {
+                    // Specifies the address literally
+                    Some(Operand::Value(value)) => value.into(),
+                    // Specifies a label that corresponds to an address
+                    Some(Operand::Label(label)) => match labels.get(&label) {
+                        Some(value) => *value as i16,
+                        None => return Err("Label not found"),
+                    },
+                    // If no operand is provided, we use `000`
+                    None => 000,
+                };
+                match opcode {
+                    Opcode::HLT => output.push(Value::from(000)),
+                    Opcode::ADD => output.push(Value::from_digits(1, operand_num)?),
+                    Opcode::SUB => output.push(Value::from_digits(2, operand_num)?),
+                    Opcode::STA => output.push(Value::from_digits(3, operand_num)?),
+                    Opcode::LDA => output.push(Value::from_digits(5, operand_num)?),
+                    Opcode::BRA => output.push(Value::from_digits(6, operand_num)?),
+                    Opcode::BRZ => output.push(Value::from_digits(7, operand_num)?),
+                    Opcode::BRP => output.push(Value::from_digits(8, operand_num)?),
+                    Opcode::INP => output.push(Value::from_digits(9, 01)?),
+                    Opcode::OUT => output.push(Value::from_digits(9, 02)?),
+                    Opcode::OTC => output.push(Value::from_digits(9, 22)?),
+                    Opcode::DAT => {
+                        output.push(Value::new(operand_num).map_err(|_| "DAT: Value out of range")?)
+                    }
+                }
+            }
+            Line::Empty() => continue,
+        }
+    }
+    Ok(output)
 }
 
 fn assemble(program: &str) -> Result<Vec<Value>, ParseError> {
