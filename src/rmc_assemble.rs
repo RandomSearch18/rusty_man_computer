@@ -38,10 +38,6 @@ enum ParseError {
     OperandOutOfRange(i16),
 }
 
-enum State {
-    Unknown,
-}
-
 fn parse_opcode(string: &str) -> Option<Opcode> {
     match string {
         "HLT" => Some(Opcode::HLT),
@@ -120,8 +116,20 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
         .collect()
 }
 
-fn assemble(program: &str) -> Vec<Value> {
+fn assemble(program: &str) -> Result<Vec<Value>, ParseError> {
     let parsed = parse_assembly(program);
+    let valid_lines: Vec<Line> = Vec::new();
+    // Only go forward with non-empty lines, and raise an error if we encounter an invalid line
+    for line in parsed {
+        match line {
+            Ok(line) => match line {
+                Line::Empty() => continue,
+                Line::Instruction { .. } => valid_lines.push(line),
+            },
+            Err(error) => return Err(error),
+        }
+    }
+
     for line in parsed {
         let line = line.unwrap();
         println!("{:?}", line);
