@@ -60,8 +60,8 @@ fn parse_opcode(string: &str) -> Option<Opcode> {
     }
 }
 
-fn assemble(program: &str) -> Vec<Value> {
-    let parsed: Vec<Result<Line, ParseError>> = program
+fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
+    program
         .lines()
         .map(|line| {
             let line = line.trim();
@@ -117,7 +117,11 @@ fn assemble(program: &str) -> Vec<Value> {
                 operand,
             })
         })
-        .collect();
+        .collect()
+}
+
+fn assemble(program: &str) -> Vec<Value> {
+    let parsed = parse_assembly(program);
     for line in parsed {
         let line = line.unwrap();
         println!("{:?}", line);
