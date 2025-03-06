@@ -175,7 +175,13 @@ fn generate_machine_code(lines: Vec<Line>) -> Result<Vec<Value>, &'static str> {
     Ok(output)
 }
 
-fn assemble(program: &str) -> Result<Vec<Value>, ParseError> {
+#[derive(Debug)]
+enum AssemblerError {
+    ParseError(ParseError),
+    MachineCodeError(&'static str),
+}
+
+fn assemble(program: &str) -> Result<Vec<Value>, AssemblerError> {
     let parsed = parse_assembly(program);
     let mut valid_lines: Vec<Line> = Vec::new();
     // Only go forward with non-empty lines, and raise an error if we encounter an invalid line
@@ -185,11 +191,14 @@ fn assemble(program: &str) -> Result<Vec<Value>, ParseError> {
                 Line::Empty() => continue,
                 Line::Instruction { .. } => valid_lines.push(line),
             },
-            Err(error) => return Err(error),
+            Err(error) => return Err(AssemblerError::ParseError(error)),
         }
     }
 
-    Ok(vec![])
+    match generate_machine_code(valid_lines) {
+        Ok(machine_code) => Ok(machine_code),
+        Err(error) => Err(AssemblerError::MachineCodeError(error)),
+    }
 }
 
 fn main() {
