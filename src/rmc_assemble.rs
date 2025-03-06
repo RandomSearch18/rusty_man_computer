@@ -207,8 +207,8 @@ fn assemble(program: &str) -> Result<Vec<Value>, AssemblerError> {
 pub struct Args {
     /// Path to the assembly program
     program: PathBuf,
-    /// Path to a .bin file to save the assembled program to
-    output: Option<PathBuf>,
+    /// Path to a .bin file to write the assembled program to
+    output_file: Option<PathBuf>,
 }
 
 fn main() -> Result<(), String> {
