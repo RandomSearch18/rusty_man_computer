@@ -13,7 +13,7 @@ It contains two tools:
 
 ### Running in CodeSandbox
 
-You can try Rusty-Man Computer in your browser by visiting the **CodeSandbox demo**. (TODO: Add link)
+You can try Rusty-Man Computer in your browser by visiting the **[💻 CodeSandbox demo](https://codesandbox.io/p/github/RandomSearch18/rusty_man_computer/)**.
 
 If you see "Setup in progress" in the top left of the CodeSandbox UI, it's building a microVM image for you. You'll have to wait for this to complete (you can click on it to see progress). You _might_ have to refresh after it's finished building.
 
