@@ -21,6 +21,12 @@ Each clock cycle, the contents of the registers are shown on the first line, the
 
 ## Usage
 
+### Running in CodeSandbox
+
+You can try Rusty-Man Computer in your browser by visiting the **CodeSandbox demo**. (TODO: Add link)
+
+Once CodeSandbox has loaded, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\`</kbd> to open a new terminal, where you can use `cargo run` to run the [demo programs](#running-the-demo-programs) below.
+
 ### Pre-compiled binaries
 
 At the moment, `cargo run` is the recommended way to run the app, but pre-compiled binaries are also available for [some platforms](#supported-platforms). Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
