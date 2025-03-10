@@ -9,17 +9,13 @@ It contains two tools:
 - **`rusty_man_computer`** Is the main program. It reads a binary file containing assembled LMC code and runs it.
 - **`bin_creator`** is a utility that lets you paste in the contents of LMC's memory (from the online simulator), which it will convert to a binary file (which can be executed by `rusty_man_computer`).
 
-## Screenshots
-
-### Printing every ASCII character
-
-This screenshot only shows the last few clock cycles, after all the characters have been printed.
-
-Each clock cycle, the contents of the registers are shown on the first line, the next line is the output, and then the contents of memory is printed, formatted in the same way as the online simulator (left to right, and then down).
-
-![Screenshot of some of the output from the emulator running in a terminal](assets/terminal-demo-1.png)
-
 ## Usage
+
+### Running in CodeSandbox
+
+You can try Rusty-Man Computer in your browser by visiting the **CodeSandbox demo**. (TODO: Add link)
+
+Once CodeSandbox has loaded, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\`</kbd> to open a new terminal, where you can use `cargo run` to run the [demo programs](#running-the-demo-programs) below.
 
 ### Pre-compiled binaries
 
@@ -105,6 +101,16 @@ cargo run --bin rusty_man_computer -- --ram my_program.bin
 - `--output-only` is a flag that disables printing the emulated computer's state every clock cycle. Output is simply printed as it's generated, and input prompts are still displayed.
 - `--help` (`-h`) prints the help message, which shows a list of command-line arguments.
 - `--version` (`-V`) prints the program name and version.
+
+## Screenshots
+
+### Printing every ASCII character
+
+This screenshot only shows the last few clock cycles, after all the characters have been printed.
+
+Each clock cycle, the contents of the registers are shown on the first line, the next line is the output, and then the contents of memory is printed, formatted in the same way as the online simulator (left to right, and then down).
+
+![Screenshot of some of the output from the emulator running in a terminal](assets/terminal-demo-1.png)
 
 ## Features
 
