@@ -15,7 +15,9 @@ It contains two tools:
 
 You can try Rusty-Man Computer in your browser by visiting the **CodeSandbox demo**. (TODO: Add link)
 
-Once CodeSandbox has loaded, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\`</kbd> to open a new terminal, where you can use `cargo run` to run the [demo programs](#running-the-demo-programs) below.
+If you see "Setup in progress" in the top left of the CodeSandbox UI, it's building a microVM image for you. You'll have to wait for this to complete (you can click on it to see progress). You _might_ have to refresh after it's finished building.
+
+Once CodeSandbox has loaded, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\`</kbd> to open a new terminal, where you can use `cargo run` to run the [demo programs](#running-the-demo-programs) below :D
 
 ### Pre-compiled binaries
 
