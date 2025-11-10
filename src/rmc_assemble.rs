@@ -29,7 +29,7 @@ enum Operand {
 
 #[derive(Debug)]
 enum Line {
-    Empty(),
+    Empty,
     Instruction {
         label: Option<String>,
         opcode: Opcode,
@@ -67,11 +67,11 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
         .map(|line| {
             let line = line.trim();
             if line.is_empty() || line.starts_with("//") {
-                return Ok(Line::Empty());
+                return Ok(Line::Empty);
             }
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() == 0 {
-                return Ok(Line::Empty());
+                return Ok(Line::Empty);
             }
             // If the first part isn't a valid opcode, use it as a label
             let first_part_as_opcode = parse_opcode(parts[0]);
@@ -173,7 +173,7 @@ fn generate_machine_code(lines: Vec<Line>) -> Result<Vec<Value>, &'static str> {
                     }
                 }
             }
-            Line::Empty() => continue,
+            Line::Empty => continue,
         }
     }
     Ok(output)
@@ -192,7 +192,7 @@ fn assemble(program: &str) -> Result<Vec<Value>, AssemblerError> {
     for line in parsed {
         match line {
             Ok(line) => match line {
-                Line::Empty() => continue,
+                Line::Empty => continue,
                 Line::Instruction { .. } => valid_lines.push(line),
             },
             Err(error) => return Err(AssemblerError::ParseError(error)),
