@@ -123,7 +123,8 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
         .collect()
 }
 
-fn generate_label_table(lines: &Vec<Line>) -> HashMap<String, usize> {
+/// Takes some assembly code and creates a table of the labels in the code
+fn generate_label_table(lines: &[Line]) -> HashMap<String, usize> {
     let mut labels: HashMap<String, usize> = HashMap::new();
     for (index, line) in lines.iter().enumerate() {
         match line {
