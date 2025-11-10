@@ -12,7 +12,19 @@ It contains three tools:
 
 ## Usage
 
-### Running in CodeSandbox
+### Reccomended: Pre-compiled binaries
+
+Pre-compiled binaries (executibles) are available for [common Windows and Linux platforms](#supported-platforms). Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
+
+Then you can run the examples below (adapting the binary name to match the name of the file you've downloaded). For example:
+
+```bash
+rusty-man-computer-0.4.0-x86_64-pc-windows-gnu.exe --ram demos/add.bin
+```
+
+I'd suggest renaming the binary file to `rusty-man-computer` or `rusty-man-computer.exe` (on Windows) to make things easier to type.
+
+### Try it online: Run in CodeSandbox
 
 You can try Rusty-Man Computer in your browser by visiting the **[💻 CodeSandbox demo](https://codesandbox.io/p/github/RandomSearch18/rusty_man_computer/)**.
 
@@ -20,14 +32,12 @@ If you see "Setup in progress" in the top left of the CodeSandbox UI, it's build
 
 Once CodeSandbox has loaded, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\`</kbd> to open a new terminal, where you can use `cargo run` to run the [demo programs](#running-the-demo-programs) below :D
 
-### Pre-compiled binaries
+### Alternative: Run using Cargo
 
-At the moment, `cargo run` is the recommended way to run the app, but pre-compiled binaries are also available for [some platforms](#supported-platforms). Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
+If you have [Rust installed](https://rust-lang.org/tools/install/), you can run the programs by cloning this repository and using `cargo run`, e.g.
 
-Then, you can directly run the binary, following the examples below, e.g.
-
-```sh
-rusty-man-computer --ram demos/add.bin
+```bash
+cargo run --bin rusty_man_computer -- demos/add.bin
 ```
 
 ### Running the demo programs
@@ -39,7 +49,7 @@ Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
 > Output the sum of two numbers
 
 ```bash
-cargo run --bin rusty_man_computer -- --ram demos/add.bin
+rusty-man-computer --ram demos/add.bin
 ```
 
 #### Addition and subtraction
@@ -51,7 +61,7 @@ Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
 > and the third minus the first
 
 ```bash
-cargo run --bin rusty_man_computer -- --ram demos/add-subtract.bin
+rusty-man-computer --ram demos/add-subtract.bin
 ```
 
 #### Basic ASCII characters
@@ -59,7 +69,7 @@ cargo run --bin rusty_man_computer -- --ram demos/add-subtract.bin
 Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
 
 ```bash
-cargo run --bin rusty_man_computer -- --ram demos/ascii.bin
+rusty-man-computer --ram demos/ascii.bin
 ```
 
 #### Basic ASCII character table
@@ -67,7 +77,7 @@ cargo run --bin rusty_man_computer -- --ram demos/ascii.bin
 Credit: Peter L Higginson, <https://peterhigginson.co.uk/lmc/>
 
 ```bash
-cargo run --bin rusty_man_computer -- --ram demos/ascii_table.bin
+rusty-man-computer --ram demos/ascii_table.bin
 ```
 
 #### Factorial
@@ -77,7 +87,7 @@ Credit: 101computing.net, <https://www.101computing.net/LMC/>
 Computes the factorial of the given input number. Note that above $6!$, the output will be wrong due to 999 being the highest representable number.
 
 ```bash
-cargo run --bin rusty_man_computer -- --ram demos/factorial.bin
+rusty-man-computer --ram demos/factorial.bin
 ```
 
 ### Running your own programs
@@ -85,13 +95,13 @@ cargo run --bin rusty_man_computer -- --ram demos/factorial.bin
 If you have a program written in LMC assembly, you can assemble it to a Rusty-Man Computer machine code file using the `rmc_assemble` binary.
 
 ```bash
-cargo run --bin rmc_assemble -- my_program.lmc --output my_program.bin
+rmc_assemble my_program.lmc --output my_program.bin
 ```
 
 Then you can run the program in a similar way to the examples above, e.g.
 
 ```bash
-cargo run --bin rusty_man_computer -- --ram my_program.bin
+rusty-man-computer --ram my_program.bin
 ```
 
 ### Command-line arguments
