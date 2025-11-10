@@ -1,5 +1,5 @@
 use clap::Parser;
-use rusty_man_computer::{print_error, Args, Config};
+use rusty_man_computer::{Args, Config, print_error};
 
 fn main() -> () {
     let config = Config::from_args(Args::parse());

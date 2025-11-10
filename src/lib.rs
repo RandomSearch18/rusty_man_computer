@@ -2,10 +2,10 @@ use clap::Parser;
 use std::{error::Error, fs, io::Write, path::PathBuf};
 use value::Value;
 
-mod value {
+pub mod value {
     use std::{
         fmt,
-        ops::{AddAssign, SubAssign},
+        ops::{AddAssign, RangeInclusive, SubAssign},
     };
 
     /// Represents a value held by one letterbox (memory cell) in the LMC
@@ -15,6 +15,7 @@ mod value {
     impl Value {
         pub const MIN: i16 = -999;
         pub const MAX: i16 = 999;
+        pub const RANGE: RangeInclusive<i16> = Self::MIN..=Self::MAX;
 
         pub fn new(value: i16) -> Result<Value, ()> {
             if value < -999 || value > 999 {
@@ -44,6 +45,16 @@ mod value {
             Value::new(0).expect("Failed to create zero value")
         }
 
+        pub fn from_digits(first_digit: i16, last_two_digits: i16) -> Result<Value, &'static str> {
+            if !(0..=9).contains(&first_digit) {
+                return Err("First digit out of range");
+            }
+            if !(0..=99).contains(&last_two_digits) {
+                return Err("Last two digits out of range");
+            }
+            Value::new(first_digit * 100 + last_two_digits).or(Err("Value out of range"))
+        }
+
         pub fn first_digit(&self) -> i16 {
             self.0 / 100
         }
@@ -70,6 +81,11 @@ mod value {
 
         pub fn to_string(&self) -> String {
             self.0.to_string()
+        }
+
+        /// Converts the value into its big-endian byte representation (2 bytes)
+        pub fn to_be_bytes(&self) -> [u8; 2] {
+            self.0.to_be_bytes()
         }
     }
 

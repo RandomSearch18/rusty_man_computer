@@ -81,17 +81,13 @@ cargo run --bin rusty_man_computer -- --ram demos/factorial.bin
 
 ### Running your own programs
 
-At the moment, the easiest way to write a program is using the assembly language in the [online simulator](https://peterhigginson.co.uk/lmc/). Write the assembly code, click "ASSEMBLE INTO RAM", and click-and-drag to copy the contents of the memory text boxes (you can leave out any empty memory at the end).
-
-Then you can run `bin_creator`, giving it the file name that the binary file should be written to, e.g.
+If you have a program written in LMC assembly, you can assemble it to a Rusty-Man Computer machine code file using the `rmc_assemble` binary.
 
 ```bash
-cargo run --bin bin_creator -- my_program.bin
+cargo run --bin rmc_assemble -- my_program.lmc --output my_program.bin
 ```
 
-Follow the prompt to paste the memory data into your terminal, and press Enter twice in a row to mark the end of the data.
-
-Then you can run the program as described above, e.g.
+Then you can run the program in a similar way to the examples above, e.g.
 
 ```bash
 cargo run --bin rusty_man_computer -- --ram my_program.bin
