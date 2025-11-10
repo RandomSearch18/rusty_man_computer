@@ -1,5 +1,9 @@
 use clap::Parser;
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    io::{Write, stdout},
+    path::PathBuf,
+};
 
 use rusty_man_computer::value::Value;
 
@@ -225,8 +229,14 @@ fn main() -> Result<(), String> {
             }
         },
         Ok(machine_code) => {
-            println!("{:?}", machine_code);
-            Ok(())
+            let machine_code_bytes: Vec<u8> = machine_code
+                .iter()
+                .flat_map(|&i| i.to_be_bytes().to_vec())
+                .collect();
+            match stdout().lock().write(&machine_code_bytes) {
+                Ok(_) => Ok(()),
+                Err(error) => Err(format!("Failed to write to stdout: {:?}", error)),
+            }
         }
     }
 }
