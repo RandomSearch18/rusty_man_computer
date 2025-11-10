@@ -83,7 +83,7 @@ pub mod value {
             self.0.to_string()
         }
 
-        // Converts the value into its big-endian byte representation (2 bytes)
+        /// Converts the value into its big-endian byte representation (2 bytes)
         pub fn to_be_bytes(&self) -> [u8; 2] {
             self.0.to_be_bytes()
         }
