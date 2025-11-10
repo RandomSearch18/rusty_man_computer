@@ -4,10 +4,11 @@
 
 This project is an emulator for Little Man Computer (LMC) ([Wikipedia](https://en.wikipedia.org/wiki/Little_man_computer)), written in Rust. Its behaviour is based on [Peter Higginson's online LMC simulator](https://peterhigginson.co.uk/lmc/).
 
-It contains two tools:
+It contains three tools:
 
-- **`rusty_man_computer`** Is the main program. It reads a binary file containing assembled LMC code and runs it.
-- **`bin_creator`** is a utility that lets you paste in the contents of LMC's memory (from the online simulator), which it will convert to a binary file (which can be executed by `rusty_man_computer`).
+- **`rusty_man_computer`** is the main program. It reads a binary file containing assembled LMC code and runs it.
+- **`rmc_assemble`** is an assembler. It takes a file containing LMC assembly code and converts it to a file that can be read by the `rusty_man_computer` emulator (i.e. a Rusty-Man Computer machine code file).
+- **`bin_creator`** is a utility that lets you paste in the contents of LMC's memory (from the online simulator), and converts it to a Rusty-Man Computer machine code file.
 
 ## Usage
 
