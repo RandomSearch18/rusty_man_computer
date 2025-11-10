@@ -231,7 +231,7 @@ fn main() -> Result<(), String> {
         Ok(machine_code) => {
             let machine_code_bytes: Vec<u8> = machine_code
                 .iter()
-                .flat_map(|&i| i.to_be_bytes().to_vec())
+                .flat_map(|&i| i.to_be_bytes())
                 .collect();
             fs::write(args.output, machine_code_bytes)
                 .map_err(|e| format!("Failed to write output file: {}", e))
