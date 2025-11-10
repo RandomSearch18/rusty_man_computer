@@ -1,8 +1,6 @@
 use clap::Parser;
 use std::{
-    collections::HashMap,
-    io::{Write, stdout},
-    path::PathBuf,
+    collections::HashMap, fs, path::PathBuf
 };
 
 use rusty_man_computer::value::Value;
@@ -213,7 +211,8 @@ pub struct Args {
     /// Path to the assembly program
     program: PathBuf,
     /// Path to a .bin file to write the assembled program to
-    output_file: Option<PathBuf>,
+    #[arg(short, long)]
+    output: PathBuf,
 }
 
 fn main() -> Result<(), String> {
@@ -234,10 +233,8 @@ fn main() -> Result<(), String> {
                 .iter()
                 .flat_map(|&i| i.to_be_bytes().to_vec())
                 .collect();
-            match stdout().lock().write(&machine_code_bytes) {
-                Ok(_) => Ok(()),
-                Err(error) => Err(format!("Failed to write to stdout: {:?}", error)),
-            }
+            fs::write(args.output, machine_code_bytes)
+                .map_err(|e| format!("Failed to write output file: {}", e))
         }
     }
 }

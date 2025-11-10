@@ -86,7 +86,7 @@ cargo run --bin rusty_man_computer -- --ram demos/factorial.bin
 If you have a program written in LMC assembly, you can assemble it to a Rusty-Man Computer machine code file using the `rmc_assemble` binary.
 
 ```bash
-cargo run --bin rmc_assemble my_program.lmc > my_program.bin
+cargo run --bin rmc_assemble -- my_program.lmc --output my_program.bin
 ```
 
 Then you can run the program in a similar way to the examples above, e.g.
