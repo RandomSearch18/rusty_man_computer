@@ -24,4 +24,6 @@ for target in "${targets[@]}"; do
         cp "target/$target/release/rusty_man_computer.exe" "target/dist/rusty-man-computer-$version-$target.exe"
     cp "target/$target/release/bin_creator" "target/dist/bin-creator-$version-$target" || \
         cp "target/$target/release/bin_creator.exe" "target/dist/bin-creator-$version-$target.exe"
+    cp "target/$target/release/rmc_assemble" "target/dist/rmc-assemble-$version-$target" || \
+        cp "target/$target/release/rmc_assemble.exe" "target/dist/rmc-assemble-$version-$target.exe"
 done
