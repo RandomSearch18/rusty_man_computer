@@ -125,7 +125,7 @@ Each clock cycle, the contents of the registers are shown on the first line, the
 
 Rusty-Man Computer shows the whole state of the computer at the end of every clock cycle, including the contents of the registers, all memory values, the output, and if a branch instruction has been called. This verbose output should make it easy to see what the emulator is doing, and to track your code as it runs.
 
-The emulator aims to be 100% compatible with [the Peter Higginson implementation](https://peterhigginson.co.uk/lmc/help_new.html) (LMC v1.5b, as of February 2025). All instructions and behaviour present in v1.5 have been implemented, so programs should run exactly as they do on the online simulator.
+The emulator aims to be 100% compatible with [the Peter Higginson implementation](https://peterhigginson.co.uk/lmc/help_new.html) (LMC v1.5b, as of November 2025). All instructions and behaviour present in v1.5 have been implemented, so programs should run exactly as they do on the online simulator.
 
 ## Supported platforms
 
