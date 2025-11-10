@@ -244,7 +244,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn assembles_add_program() {
+    fn assembler_add_program() {
         let program = "
         // Outputs sum of two inputs
         INP
