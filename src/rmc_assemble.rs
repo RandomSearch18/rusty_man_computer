@@ -1,7 +1,5 @@
 use clap::Parser;
-use std::{
-    collections::HashMap, fs, path::PathBuf
-};
+use std::{collections::HashMap, fmt, fs, path::PathBuf};
 
 use rusty_man_computer::value::Value;
 
@@ -38,9 +36,34 @@ enum Line {
 }
 
 #[derive(Debug)]
-enum ParseError {
+enum ParseErrorType {
     InvalidOpcode(String),
     OperandOutOfRange(i16),
+}
+
+impl fmt::Display for ParseErrorType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ParseErrorType::InvalidOpcode(opcode) => {
+                write!(f, "Invalid opcode: {}", opcode)
+            }
+            ParseErrorType::OperandOutOfRange(value) => {
+                write!(f, "Operand out of range: {}", value)
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+struct ParseError {
+    error: ParseErrorType,
+    line: usize,
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Parse error on line {}: {}", self.line, self.error)
+    }
 }
 
 fn parse_opcode(string: &str) -> Option<Opcode> {
@@ -64,8 +87,10 @@ fn parse_opcode(string: &str) -> Option<Opcode> {
 fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
     program
         .lines()
-        .map(|line| {
+        .enumerate()
+        .map(|(line_index, line)| {
             let line = line.trim();
+            let line_number = line_index + 1;
             if line.is_empty() || line.starts_with("//") {
                 return Ok(Line::Empty);
             }
@@ -87,11 +112,21 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
                     let string = match parts.get(1) {
                         Some(string) => string,
                         // This means there's only one part: there's nothing to label, so it's just an invalid opcode
-                        None => return Err(ParseError::InvalidOpcode(parts[0].to_string())),
+                        None => {
+                            return Err(ParseError {
+                                error: ParseErrorType::InvalidOpcode(parts[0].to_string()),
+                                line: line_number,
+                            });
+                        }
                     };
                     match parse_opcode(string) {
                         Some(opcode) => opcode,
-                        None => return Err(ParseError::InvalidOpcode(string.to_string())),
+                        None => {
+                            return Err(ParseError {
+                                error: ParseErrorType::InvalidOpcode(string.to_string()),
+                                line: line_number,
+                            });
+                        }
                     }
                 }
             };
@@ -106,7 +141,10 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
                 Some(string) => match string.parse::<i16>() {
                     Ok(value) => Some(Operand::Value(
                         // If the number doesn't fit within a Value, return an OperandOutOfRange error
-                        Value::new(value).map_err(|_| ParseError::OperandOutOfRange(value))?,
+                        Value::new(value).map_err(|_| ParseError {
+                            error: ParseErrorType::OperandOutOfRange(value),
+                            line: line_number,
+                        })?,
                     )),
                     Err(_) => Some(Operand::Label(string.to_string())),
                 },
@@ -222,17 +260,15 @@ fn main() -> Result<(), String> {
     match assembler_result {
         Err(error) => match error {
             AssemblerError::ParseError(parse_error) => {
-                return Err(format!("Parse error: {:?}", parse_error));
+                return Err(parse_error.to_string());
             }
             AssemblerError::MachineCodeError(message) => {
                 return Err(message.to_string());
             }
         },
         Ok(machine_code) => {
-            let machine_code_bytes: Vec<u8> = machine_code
-                .iter()
-                .flat_map(|&i| i.to_be_bytes())
-                .collect();
+            let machine_code_bytes: Vec<u8> =
+                machine_code.iter().flat_map(|&i| i.to_be_bytes()).collect();
             fs::write(args.output, machine_code_bytes)
                 .map_err(|e| format!("Failed to write output file: {}", e))
         }
