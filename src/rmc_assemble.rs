@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{collections::HashMap, fmt, fs, path::PathBuf};
+use std::{collections::HashMap, fmt, fs, io, path::PathBuf};
 
 use rusty_man_computer::value::Value;
 
@@ -206,10 +206,20 @@ fn generate_machine_code(lines: Vec<Line>) -> Result<Vec<Value>, &'static str> {
     Ok(output)
 }
 
-#[derive(Debug)]
 enum AssemblerError {
     ParseError(ParseError),
     MachineCodeError(&'static str),
+    WriteError(io::Error),
+}
+
+impl fmt::Debug for AssemblerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AssemblerError::ParseError(e) => write!(f, "{}", e),
+            AssemblerError::MachineCodeError(e) => write!(f, "Machine code error: {}", e),
+            AssemblerError::WriteError(e) => write!(f, "Write error: {}", e),
+        }
+    }
 }
 
 fn assemble(program: &str) -> Result<Vec<Value>, AssemblerError> {
@@ -242,24 +252,16 @@ pub struct Args {
     output: PathBuf,
 }
 
-fn main() -> Result<(), String> {
+fn main() -> Result<(), AssemblerError> {
     let args = Args::parse();
     let program = std::fs::read_to_string(args.program).expect("Failed to read program");
     let assembler_result = assemble(&program);
     match assembler_result {
-        Err(error) => match error {
-            AssemblerError::ParseError(parse_error) => {
-                return Err(parse_error.to_string());
-            }
-            AssemblerError::MachineCodeError(message) => {
-                return Err(message.to_string());
-            }
-        },
+        Err(error) => Err(error),
         Ok(machine_code) => {
             let machine_code_bytes: Vec<u8> =
                 machine_code.iter().flat_map(|&i| i.to_be_bytes()).collect();
-            fs::write(args.output, machine_code_bytes)
-                .map_err(|e| format!("Failed to write output file: {}", e))
+            fs::write(args.output, machine_code_bytes).map_err(|e| AssemblerError::WriteError(e))
         }
     }
 }
