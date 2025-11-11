@@ -14,9 +14,9 @@ It contains three tools:
 
 ### Reccomended: Pre-compiled binaries
 
-Pre-compiled binaries (executibles) are available for [common Windows and Linux platforms](#supported-platforms). Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
+Pre-compiled binaries (executables) are available for [common Windows and Linux platforms](#supported-platforms). Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
 
-Then you can run the examples below (adapting the binary name to match the name of the file you've downloaded). For example:
+Then you can run the examples below (adjusting the binary name to match the name of the file you've downloaded). For example:
 
 ```bash
 rusty-man-computer-0.4.0-x86_64-pc-windows-gnu.exe --ram demos/add.bin
