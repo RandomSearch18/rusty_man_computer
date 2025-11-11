@@ -109,25 +109,14 @@ fn parse_assembly(program: &str) -> Vec<Result<Line, ParseError>> {
             let opcode = match first_part_as_opcode {
                 Some(opcode) => opcode,
                 None => {
-                    let string = match parts.get(1) {
-                        Some(string) => string,
-                        // This means there's only one part: there's nothing to label, so it's just an invalid opcode
-                        None => {
-                            return Err(ParseError {
-                                error: ParseErrorType::InvalidOpcode(parts[0].to_string()),
-                                line: line_number,
-                            });
-                        }
-                    };
-                    match parse_opcode(string) {
-                        Some(opcode) => opcode,
-                        None => {
-                            return Err(ParseError {
-                                error: ParseErrorType::InvalidOpcode(string.to_string()),
-                                line: line_number,
-                            });
-                        }
-                    }
+                    let string = parts.get(1).ok_or(ParseError {
+                        error: ParseErrorType::InvalidOpcode(parts[0].to_string()),
+                        line: line_number,
+                    })?;
+                    parse_opcode(string).ok_or(ParseError {
+                        error: ParseErrorType::InvalidOpcode(string.to_string()),
+                        line: line_number,
+                    })?
                 }
             };
             let operand_part = if label.is_some() {
