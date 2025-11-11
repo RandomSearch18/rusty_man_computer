@@ -14,12 +14,12 @@ It contains three tools:
 
 ### Reccomended: Pre-compiled binaries
 
-Pre-compiled binaries (executables) are available for [common Windows and Linux platforms](#supported-platforms). Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
+Pre-compiled binaries (executables) are available for Windows and Linux. Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
 
-You can also download an example program from [the `demos` directory](https://github.com/RandomSearch18/rusty_man_computer/tree/master/demos), and run it as below (adjusting the binary name to match the name of the file you've downloaded):
+You can download an example program from [the `demos` directory](https://github.com/RandomSearch18/rusty_man_computer/tree/master/demos), and run it as below (adjusting the binary name to match the name of the file you've downloaded):
 
-```bash
-rusty-man-computer-0.4.0-x86_64-pc-windows-gnu.exe --ram add.bin
+```batch
+.\rusty-man-computer-0.4.0-x86_64-pc-windows-gnu.exe --ram add.bin
 ```
 
 I'd suggest renaming the binary file to `rusty-man-computer` or `rusty-man-computer.exe` (on Windows) to make things easier to type.
@@ -98,7 +98,7 @@ If you have a program written in LMC assembly, you can assemble it to a Rusty-Ma
 rmc_assemble my_program.lmc --output my_program.bin
 ```
 
-Then you can run the program in a similar way to the examples above, e.g.
+Then you can run the program in a similar way to the demos above, e.g.
 
 ```bash
 rusty-man-computer --ram my_program.bin
