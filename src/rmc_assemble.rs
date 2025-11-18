@@ -209,6 +209,7 @@ fn generate_machine_code(lines: Vec<Line>) -> Result<Vec<Value>, &'static str> {
 enum AssemblerError {
     ParseError(ParseError),
     MachineCodeError(&'static str),
+    ReadError(io::Error),
     WriteError(io::Error),
 }
 
@@ -218,6 +219,7 @@ impl fmt::Debug for AssemblerError {
             AssemblerError::ParseError(e) => write!(f, "{}", e),
             AssemblerError::MachineCodeError(e) => write!(f, "Machine code error: {}", e),
             AssemblerError::WriteError(e) => write!(f, "Write error: {}", e),
+            AssemblerError::ReadError(e) => write!(f, "Failed to read input file: {}", e),
         }
     }
 }
@@ -254,7 +256,8 @@ pub struct Args {
 
 fn main() -> Result<(), AssemblerError> {
     let args = Args::parse();
-    let program = std::fs::read_to_string(args.program).expect("Failed to read program");
+    let program =
+        std::fs::read_to_string(args.program).map_err(|e| AssemblerError::ReadError(e))?;
     let assembler_result = assemble(&program);
     match assembler_result {
         Err(error) => Err(error),
