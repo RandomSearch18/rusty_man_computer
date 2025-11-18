@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
-use rusty_man_computer::{Computer, Config};
+use rusty_man_computer::{Computer, ComputerConfig};
 
 #[test]
 fn test_ascii_program() {
-    let mut computer = Computer::new(Config {
+    let mut computer = Computer::new(ComputerConfig {
         load_ram_file_path: Some(PathBuf::from("demos/ascii.bin")),
-        ..Config::default()
+        ..ComputerConfig::default()
     });
     computer
         .initialize_ram_from_file()
@@ -24,10 +24,10 @@ fn test_add_program() {
     let number_1 = 3;
     let number_2 = -5;
     let expected_output = number_1 + number_2;
-    let mut computer = Computer::new(Config {
+    let mut computer = Computer::new(ComputerConfig {
         load_ram_file_path: Some(PathBuf::from("demos/add.bin")),
         input: Some(vec![number_1.into(), number_2.into()]),
-        ..Config::default()
+        ..ComputerConfig::default()
     });
     computer
         .initialize_ram_from_file()
@@ -43,10 +43,10 @@ fn test_add_subtract_program() {
     let expected_sum = number_1 + number_2;
     let number_3 = 100;
     let expected_difference = number_3 - number_1;
-    let mut computer = Computer::new(Config {
+    let mut computer = Computer::new(ComputerConfig {
         load_ram_file_path: Some(PathBuf::from("demos/add-subtract.bin")),
         input: Some(vec![number_1.into(), number_2.into(), number_3.into()]),
-        ..Config::default()
+        ..ComputerConfig::default()
     });
     computer
         .initialize_ram_from_file()
@@ -61,10 +61,10 @@ fn test_factorial_program() {
     let input = 6;
     // 6! = 720
     let expected_output = 720;
-    let mut computer = Computer::new(Config {
+    let mut computer = Computer::new(ComputerConfig {
         load_ram_file_path: Some(PathBuf::from("demos/factorial.bin")),
         input: Some(vec![input.into()]),
-        ..Config::default()
+        ..ComputerConfig::default()
     });
     computer
         .initialize_ram_from_file()

@@ -1,8 +1,13 @@
 use clap::Parser;
-use rusty_man_computer::{Args, Config, print_error};
+use rusty_man_computer::{Args, ExecuteLegacy, ComputerConfig, print_error};
 
 fn main() -> () {
-    let config = Config::from_args(Args::parse());
+    let args = Args::parse();
+    let command = args.command.or_else(|| {
+        ExecuteLegacy {
+            
+        }
+    })
 
     println!("Little Man Computer implemented in Rust!");
     if let Err(e) = rusty_man_computer::run(config) {
