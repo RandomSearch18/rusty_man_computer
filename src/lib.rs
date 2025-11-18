@@ -550,11 +550,11 @@ impl Default for ComputerConfig {
 #[command(version)]
 pub struct Args {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Command,
 }
 
 #[derive(Subcommand, Clone)]
-pub enum Commands {
+pub enum Command {
     /// executes the provided Rusty-Man machine code
     Execute(ExecuteArgs),
 }
