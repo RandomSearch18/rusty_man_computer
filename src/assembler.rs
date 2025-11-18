@@ -1,5 +1,6 @@
 use clap::Parser;
 use std::{collections::HashMap, fmt, fs, io, path::PathBuf};
+use thiserror::Error;
 
 use rusty_man_computer::value::Value;
 
@@ -55,7 +56,7 @@ impl fmt::Display for ParseErrorType {
 }
 
 #[derive(Debug)]
-struct ParseError {
+pub struct ParseError {
     error: ParseErrorType,
     line: usize,
 }
@@ -206,10 +207,15 @@ fn generate_machine_code(lines: Vec<Line>) -> Result<Vec<Value>, &'static str> {
     Ok(output)
 }
 
-enum AssemblerError {
+#[derive(Error)]
+pub enum AssemblerError {
+    #[error("{0}")]
     ParseError(ParseError),
+    #[error("Machine code error: {0}")]
     MachineCodeError(&'static str),
+    #[error("Failed to read input file: {0}")]
     ReadError(io::Error),
+    #[error("Failed to write to output file: {0}")]
     WriteError(io::Error),
 }
 
@@ -224,7 +230,7 @@ impl fmt::Debug for AssemblerError {
     }
 }
 
-fn assemble(program: &str) -> Result<Vec<Value>, AssemblerError> {
+pub fn assemble(program: &str) -> Result<Vec<Value>, AssemblerError> {
     let parsed = parse_assembly(program);
     let mut valid_lines: Vec<Line> = Vec::new();
     // Only go forward with non-empty lines, and raise an error if we encounter an invalid line

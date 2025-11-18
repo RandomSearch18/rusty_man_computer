@@ -557,6 +557,10 @@ pub struct Args {
 pub enum Command {
     /// executes the provided Rusty-Man machine code
     Execute(ExecuteArgs),
+    Run {
+        #[arg()]
+        file: PathBuf,
+    },
 }
 
 #[derive(Parser, Clone)]
