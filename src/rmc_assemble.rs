@@ -218,7 +218,7 @@ impl fmt::Debug for AssemblerError {
         match self {
             AssemblerError::ParseError(e) => write!(f, "{}", e),
             AssemblerError::MachineCodeError(e) => write!(f, "Machine code error: {}", e),
-            AssemblerError::WriteError(e) => write!(f, "Write error: {}", e),
+            AssemblerError::WriteError(e) => write!(f, "Failed to write to output file: {}", e),
             AssemblerError::ReadError(e) => write!(f, "Failed to read input file: {}", e),
         }
     }
