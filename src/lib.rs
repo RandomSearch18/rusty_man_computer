@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use std::{error::Error, fs, io::Write, path::PathBuf};
 use value::Value;
 
@@ -516,6 +516,10 @@ pub struct Config {
 
 impl Config {
     pub fn from_args(args: Args) -> Config {
+        let command = args.command.or_else(
+            // convert the xecuteLegacy into an execute, printing a warning
+        ); // and thendo below
+
         if args.ram_legacy.is_some() && args.ram.is_some() {
             print_error("Warning: Ignoring positional argument and using --ram argument instead.");
             print_error("Specifying a RAM file without --ram is no longer recommended.");
@@ -549,12 +553,33 @@ impl Default for Config {
 #[derive(Parser)]
 #[command(version)]
 pub struct Args {
-    // Positional arg for memory file (kept for backwards compatibility)
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// executes the provided Rusty-Man machine code
+    Execute {
+        // Positional arg for memory file (kept for backwards compatibility)
+        #[arg(hide = true)]
+        ram_legacy: Option<PathBuf>,
+        /// Path to a memory dump (.bin) file to load into RAM
+        #[arg(long)]
+        ram: Option<PathBuf>,
+        /// Only print the output of the LMC, excluding the RAM and register values.
+        #[arg(long)]
+        output_only: bool,
+    },
+    ExecuteLegacy,
+}
+
+/// Deprecated: Simpler `execute` interface, kept for backwards-compatibility
+#[derive(Parser)]
+pub struct ExecuteLegacy {
+    // Positional arg for memory file
     #[arg(hide = true)]
     ram_legacy: Option<PathBuf>,
-    /// Path to a memory dump (.bin) file to load into RAM
-    #[arg(long)]
-    ram: Option<PathBuf>,
     /// Only print the output of the LMC, excluding the RAM and register values.
     #[arg(long)]
     output_only: bool,
