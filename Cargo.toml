@@ -14,4 +14,4 @@ path = "src/bin_creator.rs"
 
 [[bin]]
 name = "rmc_assemble"
-path = "src/rmc_assemble.rs"
+path = "src/assembler.rs"

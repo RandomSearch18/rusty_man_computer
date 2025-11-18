@@ -254,8 +254,7 @@ pub struct Args {
     output: PathBuf,
 }
 
-fn main() -> Result<(), AssemblerError> {
-    let args = Args::parse();
+fn assemble_from_file(args: Args) -> Result<(), AssemblerError> {
     let program =
         std::fs::read_to_string(args.program).map_err(|e| AssemblerError::ReadError(e))?;
     let assembler_result = assemble(&program);
@@ -267,6 +266,11 @@ fn main() -> Result<(), AssemblerError> {
             fs::write(args.output, machine_code_bytes).map_err(|e| AssemblerError::WriteError(e))
         }
     }
+}
+
+fn main() -> Result<(), AssemblerError> {
+    let args = Args::parse();
+    assemble_from_file(args)
 }
 
 #[cfg(test)]
