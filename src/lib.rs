@@ -515,7 +515,7 @@ pub struct ComputerConfig {
 }
 
 impl ComputerConfig {
-    pub fn from_args(args: Execute) -> ComputerConfig {
+    pub fn from_args(args: ExecuteArgs) -> ComputerConfig {
         if args.ram_legacy.is_some() && args.ram.is_some() {
             print_error("Warning: Ignoring positional argument and using --ram argument instead.");
             print_error("Specifying a RAM file without --ram is no longer recommended.");
@@ -550,36 +550,17 @@ impl Default for ComputerConfig {
 #[command(version)]
 pub struct Args {
     #[command(subcommand)]
-    pub command: Option<Commands>,
-}
-
-impl Args {
-    pub fn command(&self) -> Commands {
-        // Fall back to using the legacy execute command if a subcommand is not provided
-        self.command.clone().unwrap_or(Commands::ExecuteLegacy)
-    }
+    pub command: Commands,
 }
 
 #[derive(Subcommand, Clone)]
 pub enum Commands {
     /// executes the provided Rusty-Man machine code
-    Execute,
-    ExecuteLegacy,
+    Execute(ExecuteArgs),
 }
 
-/// Deprecated: Simpler `execute` interface, kept for backwards-compatibility
-#[derive(Parser)]
-pub struct ExecuteLegacy {
-    // Positional arg for memory file
-    #[arg(hide = true)]
-    ram_legacy: Option<PathBuf>,
-    /// Only print the output of the LMC, excluding the RAM and register values.
-    #[arg(long)]
-    output_only: bool,
-}
-
-#[derive(Parser)]
-pub struct Execute {
+#[derive(Parser, Clone)]
+pub struct ExecuteArgs {
     // Positional arg for memory file (kept for backwards compatibility)
     #[arg(hide = true)]
     ram_legacy: Option<PathBuf>,
