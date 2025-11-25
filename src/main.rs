@@ -1,5 +1,6 @@
 use clap::Parser;
-use rusty_man_computer::{Args, Command, Computer, ComputerConfig, print_error};
+use color_eyre::eyre::eyre;
+use rusty_man_computer::{Args, Command, Computer, ComputerConfig, print_error, value::Value};
 mod assembler;
 
 fn main() -> Result<(), color_eyre::Report> {
@@ -16,9 +17,12 @@ fn main() -> Result<(), color_eyre::Report> {
         Command::Run { file } => {
             let program = std::fs::read_to_string(file)?;
             let machine_code = assembler::assemble(&program)?;
+            let machine_code_array: &[Value; 100] = &machine_code.clone().try_into().map_err(|_| {
+                eyre!("Assembled machine code does ({} letterboxes) not fit into memory (100 letterboxes max).", &machine_code.len())
+            })?; 
             let mut computer = Computer::new(ComputerConfig {
                 // FIXME
-                ram: Some(machine_code),
+                ram: machine_code_array.clone(),
                 ..ComputerConfig::default()
             });
             computer.run();

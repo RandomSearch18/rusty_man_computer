@@ -242,7 +242,7 @@ pub struct Computer {
 impl Computer {
     pub fn new(config: ComputerConfig) -> Computer {
         Computer {
-            ram: [Value::zero(); 100],
+            ram: config.ram,
             registers: Registers {
                 program_counter: 0,
                 instruction_register: 0,
@@ -501,7 +501,10 @@ fn read_input_until_valid(prompt: &str) -> Result<Value, ()> {
 }
 
 pub struct ComputerConfig {
+    /// TODO remove
     pub load_ram_file_path: Option<PathBuf>,
+    /// The initial contents of RAM (i.e. initial values for the letterboxes)
+    pub ram: [Value; 100],
     /// If the register values, output buffer, RAM values, and branch messages should be printed after every clock cycle
     pub print_computer_state: bool,
     /// If output should be directly and immediately printed when a OUT/OTC instruction is executed
@@ -528,6 +531,7 @@ impl ComputerConfig {
                 );
                 args.ram_legacy
             }),
+            ram: [Value::zero(); 100],
             print_computer_state: !args.output_only,
             print_raw_output: args.output_only,
             input: None,
@@ -539,6 +543,7 @@ impl Default for ComputerConfig {
     fn default() -> Self {
         ComputerConfig {
             load_ram_file_path: None,
+            ram: [Value::zero(); 100],
             print_computer_state: true,
             print_raw_output: false,
             input: None,
