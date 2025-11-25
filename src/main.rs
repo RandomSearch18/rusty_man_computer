@@ -17,12 +17,18 @@ fn main() -> Result<(), color_eyre::Report> {
         Command::Run { file } => {
             let program = std::fs::read_to_string(file)?;
             let machine_code = assembler::assemble(&program)?;
-            let machine_code_array: &[Value; 100] = &machine_code.clone().try_into().map_err(|_| {
-                eyre!("Assembled machine code does ({} letterboxes) not fit into memory (100 letterboxes max).", &machine_code.len())
-            })?; 
+
+            // Initialize memory with the machine code
+            let mut machine_code_array: [Value; 100] = [Value::zero(); 100];
+            if &machine_code.len() > &machine_code_array.len() {
+                return Err(eyre!("Program too large to fit in memory"));
+            }
+            for i in 0..machine_code.len() {
+                machine_code_array[i] = machine_code[i];
+            }
+
             let mut computer = Computer::new(ComputerConfig {
-                // FIXME
-                ram: machine_code_array.clone(),
+                ram: machine_code_array,
                 ..ComputerConfig::default()
             });
             computer.run();

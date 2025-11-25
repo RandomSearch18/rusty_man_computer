@@ -292,6 +292,10 @@ impl Computer {
         touched_addresses
     }
 
+    // pub fn load_values_to_ram(&mut self, values: Vec<Value>) {
+
+    // }
+
     pub fn clock_cycle(&mut self) -> bool {
         // Stage 1: Fetch
         let ram_index = self.registers.program_counter;
