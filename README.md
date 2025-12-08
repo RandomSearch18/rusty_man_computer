@@ -12,7 +12,7 @@ It contains three tools:
 
 ## Usage
 
-### Reccomended: Pre-compiled binaries
+### Recommended: Pre-compiled binaries
 
 Pre-compiled binaries (executables) are available for Windows and Linux. Download them from the **[releases page](https://github.com/RandomSearch18/rusty_man_computer/releases/latest)**.
 
@@ -23,6 +23,16 @@ You can download an example program from [the `demos` directory](https://github.
 ```
 
 I'd suggest renaming the binary file to `rusty-man-computer` or `rusty-man-computer.exe` (on Windows) to make things easier to type.
+
+### One-command installation using Cargo
+
+If you have [Rust installed](https://rust-lang.org/tools/install/), you can install a released version of Rusty-Man Computer using Cargo:
+
+```bash
+cargo install rusty_man_computer
+```
+
+This makes the `rusty_man_computer`, `bin_creator`, and `rmc_assemble` commands available on your system.
 
 ### Try it online: Run in CodeSandbox
 
