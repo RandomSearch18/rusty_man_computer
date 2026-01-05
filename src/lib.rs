@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use std::{error::Error, fs, io::Write, path::PathBuf};
 use value::Value;
 
@@ -236,13 +236,13 @@ pub struct Computer {
     ram: RAM,
     registers: Registers,
     pub output: Output,
-    config: Config,
+    config: ComputerConfig,
 }
 
 impl Computer {
-    pub fn new(config: Config) -> Computer {
+    pub fn new(config: ComputerConfig) -> Computer {
         Computer {
-            ram: [Value::zero(); 100],
+            ram: config.ram,
             registers: Registers {
                 program_counter: 0,
                 instruction_register: 0,
@@ -291,6 +291,10 @@ impl Computer {
         }
         touched_addresses
     }
+
+    // pub fn load_values_to_ram(&mut self, values: Vec<Value>) {
+
+    // }
 
     pub fn clock_cycle(&mut self) -> bool {
         // Stage 1: Fetch
@@ -500,8 +504,11 @@ fn read_input_until_valid(prompt: &str) -> Result<Value, ()> {
     }
 }
 
-pub struct Config {
+pub struct ComputerConfig {
+    /// TODO remove
     pub load_ram_file_path: Option<PathBuf>,
+    /// The initial contents of RAM (i.e. initial values for the letterboxes)
+    pub ram: [Value; 100],
     /// If the register values, output buffer, RAM values, and branch messages should be printed after every clock cycle
     pub print_computer_state: bool,
     /// If output should be directly and immediately printed when a OUT/OTC instruction is executed
@@ -514,20 +521,21 @@ pub struct Config {
     pub input: Option<Vec<Value>>,
 }
 
-impl Config {
-    pub fn from_args(args: Args) -> Config {
+impl ComputerConfig {
+    pub fn from_args(args: ExecuteArgs) -> ComputerConfig {
         if args.ram_legacy.is_some() && args.ram.is_some() {
             print_error("Warning: Ignoring positional argument and using --ram argument instead.");
             print_error("Specifying a RAM file without --ram is no longer recommended.");
         }
 
-        Config {
+        ComputerConfig {
             load_ram_file_path: args.ram.or_else(|| {
                 eprintln!(
                     "Note: It is recommended to use the --ram argument to specify a RAM file."
                 );
                 args.ram_legacy
             }),
+            ram: [Value::zero(); 100],
             print_computer_state: !args.output_only,
             print_raw_output: args.output_only,
             input: None,
@@ -535,10 +543,11 @@ impl Config {
     }
 }
 
-impl Default for Config {
+impl Default for ComputerConfig {
     fn default() -> Self {
-        Config {
+        ComputerConfig {
             load_ram_file_path: None,
+            ram: [Value::zero(); 100],
             print_computer_state: true,
             print_raw_output: false,
             input: None,
@@ -549,6 +558,22 @@ impl Default for Config {
 #[derive(Parser)]
 #[command(version)]
 pub struct Args {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+#[derive(Subcommand, Clone)]
+pub enum Command {
+    /// executes the provided Rusty-Man machine code
+    Execute(ExecuteArgs),
+    Run {
+        #[arg()]
+        file: PathBuf,
+    },
+}
+
+#[derive(Parser, Clone)]
+pub struct ExecuteArgs {
     // Positional arg for memory file (kept for backwards compatibility)
     #[arg(hide = true)]
     ram_legacy: Option<PathBuf>,
@@ -560,7 +585,7 @@ pub struct Args {
     output_only: bool,
 }
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+pub fn run(config: ComputerConfig) -> Result<(), Box<dyn Error>> {
     let mut computer = Computer::new(config);
     computer.initialize_ram_from_file()?;
     computer.run();
@@ -573,7 +598,7 @@ mod tests {
 
     #[test]
     fn hlt_instruction_works() {
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.ram[0] = 000.into();
         let has_halted = !computer.clock_cycle();
         // It should halt after the first clock cycle
@@ -583,7 +608,7 @@ mod tests {
     #[test]
     fn add_instruction_works() {
         // Test 40 + 2 = 42
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 40.into();
         computer.ram[99] = 2.into(); // Operand
         computer.ram[0] = Value::new(199).unwrap(); // Add address 99 to ACC
@@ -594,7 +619,7 @@ mod tests {
     #[test]
     fn sub_instruction_works() {
         // Test 42 - 2 = 40
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 42.into();
         computer.ram[99] = 2.into(); // Operand
         computer.ram[0] = Value::new(299).unwrap(); // Subtract address 99 from ACC
@@ -605,7 +630,7 @@ mod tests {
     #[test]
     fn store_instruction_works() {
         // Test storing 42 in address 99
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 42.into();
         computer.ram[0] = Value::new(399).unwrap(); // Store ACC to address 99
         computer.clock_cycle();
@@ -615,7 +640,7 @@ mod tests {
     #[test]
     fn load_instruction_works() {
         // Test loading 42 from address 99
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.ram[99] = 42.into();
         computer.ram[0] = Value::new(599).unwrap(); // Load ACC from address 99
         computer.clock_cycle();
@@ -625,7 +650,7 @@ mod tests {
     #[test]
     fn branch_instruction_works() {
         // Test branching/jumping to address 42
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.ram[0] = Value::new(642).unwrap(); // Branch to address 42
         computer.clock_cycle();
         assert_eq!(computer.registers.program_counter, 42);
@@ -634,7 +659,7 @@ mod tests {
     #[test]
     fn branch_zero_instruction_when_zero() {
         // Test BRZ when the accumulator is zero (so it should branch)
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 0.into();
         computer.ram[0] = Value::new(742).unwrap(); // Branch to address 42 if ACC is zero
         computer.clock_cycle();
@@ -644,7 +669,7 @@ mod tests {
     #[test]
     fn branch_zero_instruction_when_non_zero() {
         // Test BRZ when the accumulator is non-zero (so it should not branch)
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = (-5).into();
         computer.ram[0] = Value::new(742).unwrap(); // Branch to address 42 if ACC is zero
         computer.clock_cycle();
@@ -654,7 +679,7 @@ mod tests {
     #[test]
     fn branch_positive_instruction_when_positive() {
         // Test BRP when the accumulator is positive (so it should branch)
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 5.into();
         computer.ram[0] = Value::new(842).unwrap(); // Branch to address 42 if ACC is positive
         computer.clock_cycle();
@@ -665,7 +690,7 @@ mod tests {
     fn branch_positive_instruction_when_zero() {
         // Test BRP when the accumulator is zero (so it should branch)
         // (boundary data)
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 0.into();
         computer.ram[0] = Value::new(842).unwrap(); // Branch to address 42 if ACC is positive
         computer.clock_cycle();
@@ -675,7 +700,7 @@ mod tests {
     #[test]
     fn branch_positive_instruction_when_negative() {
         // Test BRP when the accumulator is negative (so it should not branch)
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = (-5).into();
         computer.ram[0] = Value::new(842).unwrap(); // Branch to address 42 if ACC is positive
         computer.clock_cycle();
@@ -685,9 +710,9 @@ mod tests {
     #[test]
     fn input_instruction_works() {
         // Test inputting 21
-        let mut computer = Computer::new(Config {
+        let mut computer = Computer::new(ComputerConfig {
             input: Some(vec![21.into()]),
-            ..Config::default()
+            ..ComputerConfig::default()
         });
         computer.ram[0] = Value::new(901).unwrap();
         computer.clock_cycle();
@@ -697,7 +722,7 @@ mod tests {
     #[test]
     fn output_instruction_works() {
         // Test outputting 21
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 21.into();
         computer.ram[0] = Value::new(902).unwrap();
         computer.clock_cycle();
@@ -707,7 +732,7 @@ mod tests {
     #[test]
     fn output_character_instruction_works() {
         // Test outputting ASCII value 104 (h)
-        let mut computer = Computer::new(Config::default());
+        let mut computer = Computer::new(ComputerConfig::default());
         computer.registers.accumulator = 104.into();
         computer.ram[0] = Value::new(922).unwrap();
         computer.clock_cycle();
